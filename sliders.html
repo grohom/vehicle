@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Vehicle motion</title>
+  <style>
+
+    svg text {
+      font-family: sans-serif;
+      font-size: 10pt;
+    }
+
+    .actual,
+    .desired {
+      fill: blue;
+      r: 10;
+    }
+
+    .desired {
+      opacity: 0.2;
+    }
+
+    .slider-frame {
+      fill: #ddd;
+      stroke: #fff;
+      stroke-width: 2;
+    }
+
+    .slider-selected {
+      stroke: #08f;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- <svg width="600" height="600" viewport="0 0 600 600" xmlns="http://www.w3.org/2000/svg" id="drawing">
+</svg>
+ -->
+<svg
+   width="600"
+   height="600"
+   viewBox="0 0 610 610"
+   version="1.1"
+   id="drawing"
+   xml:space="preserve"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+   <g>
+   <rect
+     style="fill:none;stroke:#a0a0a0;stroke-width:2;stroke-linejoin:round;stroke-opacity:1"
+     width="120"
+     height="250"
+     x="35"
+     y="60"
+     rx="4"
+     ry="4" />
+   <text xml:space="preserve"
+     x="53"
+     y="50">
+     engine
+   </text>
+   <text xml:space="preserve"
+     x="28"
+     y="303">
+     power
+   </text>
+   <text xml:space="preserve"
+     x="79"
+     y="303">
+     <tspan>torque</tspan>
+   </text>
+   <rect
+   style="fill:none;stroke:#a0a0a0;stroke-width:2;stroke-linejoin:round;stroke-opacity:1"
+   width="170"
+   height="250"
+   x="35"
+   y="350"
+   rx="4"
+   ry="4" />
+   <text xml:space="preserve"
+     x="78"
+     y="341">
+     vehicle
+   </text>
+   <text xml:space="preserve"
+     x="28"
+     y="593">
+     power
+   </text>
+   <text xml:space="preserve"
+     x="82"
+     y="593">
+     <tspan>force</tspan>
+   </text>
+   <text xml:space="preserve"
+     x="125"
+     y="593">
+     velocity
+   </text>
+   </g>
+</svg>
+
+
+
+<script>
+  
+  const drawing = document.getElementById("drawing");
+
+  const clamp = (x, xmin, xmax) => x < xmin ? xmin : x > xmax ? xmax : x;
+
+  class Indicator {
+    constructor(slider, klass="actual") {
+      let knob = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      knob.classList.add(klass);
+      knob.setAttribute("r", slider.r);
+      drawing.appendChild(knob);
+      this.knob = knob;
+      this.positionToSlider(slider);
+    }
+
+    positionToSlider(slider) {
+      this.knob.setAttribute("cx", slider.x0);
+      this.knob.setAttribute("cy", slider.val2y(slider.actual));
+    }
+
+  }
+
+  class Lever extends Indicator {
+    constructor(slider) {
+      super(slider, "desired");
+      slider.frame.classList.add("slider-selected");
+      this.slider = slider;
+
+      // this.isDragging = false;
+      this.dy = 0;
+
+      let knobMove = (evt) => {
+        let y = this.slider.newY(evt.offsetY - this.dy);
+        this.knob.setAttribute("cy", y);
+      };
+      let knobRelease = (evt) => {
+        drawing.removeEventListener("mousemove", knobMove);
+        window.removeEventListener("mouseup", knobRelease);
+        // this.isDragging = false;
+      };
+      let knobGrab = (evt) => {
+        // this.isDragging = true;
+        this.dy = evt.offsetY - this.knob.cy.baseVal.value;
+        drawing.addEventListener("mousemove", knobMove);
+        window.addEventListener("mouseup", knobRelease);
+      };
+
+      this.knob.addEventListener("mousedown", knobGrab);
+    }
+
+    activateForSlider(slider) {
+      this.slider = slider;
+      this.positionToSlider(slider);
+    }
+  }
+
+  class Slider {
+    height = 200;
+    r = 10;
+    constructor(x0, y0, val, minVal, maxVal, update_function=null) {
+      this.x0 = x0;
+      this.y0 = y0;
+      this.minVal = minVal;
+      this.maxVal = maxVal;
+      this.scale = this.height/(maxVal - minVal);
+      this.actual = val;
+      this.desired = val;
+      this.update_function = update_function;
+      let frame = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      frame.classList.add("slider-frame");
+      frame.setAttribute("x", x0 - this.r - 1);
+      frame.setAttribute("y", y0 - this.r - 1);
+      frame.setAttribute("width", 2*this.r + 2);
+      frame.setAttribute("height", this.height + 2*this.r + 2);
+      frame.setAttribute("rx", this.r + 1);
+      frame.setAttribute("ry", this.r + 1);
+      drawing.appendChild(frame);
+      let selectSlider = (evt) => {
+        if (lever.slider != this) {
+          lever.slider.frame.classList.remove("slider-selected");
+          lever.activateForSlider(this);
+          lever.slider.desired = lever.slider.actual;
+          lever.slider.frame.classList.add("slider-selected");
+        }
+      };
+      frame.addEventListener("mousedown", selectSlider);
+      this.frame = frame;
+      this.indicator = new Indicator(this);
+    }
+
+    newY(y) {
+      y = clamp(y, this.y0, this.y0 + this.height);
+      this.desired = this.y2val(y);
+      // simulate (update actual values for all sliders, corresponding to this.desired)
+      return y;
+    }
+
+    update() {
+      this.indicator.knob.setAttribute("cy", this.val2y(this.actual));
+    }
+
+    val2y(val) {
+      return this.y0 + (this.maxVal - val)*this.scale;
+    }
+
+    y2val(y) {
+      return this.maxVal - (y - this.y0)/this.scale;
+    }
+
+  }
+
+  const mass = 1;
+  const k_drag = 0.25;
+  const Fmax = 1;
+  const vmax = Fmax/k_drag;
+  const amax = Fmax/mass;
+  const Pmax = Fmax*vmax;
+  const dt = 0.1;
+
+  let force = 0;
+  let drag = 0;
+  let direction = 0;
+  let power_drag = 0;
+  let e_kinetic = 0;
+  let e_kinetic_dot = 0;
+  let x = 0;
+
+  // engine
+  const power_engine = new Slider(70, 78, 0, -Pmax, Pmax, power_pedal);
+  const torque = new Slider(120, 78, 0, -Fmax, Fmax, torque_pedal);
+  // vehicle
+  const power_vehicle = new Slider(70, 368, 0, -Pmax, Pmax);
+  const acceleration = new Slider(120, 368, 0, -amax, amax);
+  const velocity = new Slider(170, 368, 0, -vmax, vmax);
+
+  const sliders = [power_engine, torque, power_vehicle, acceleration, velocity];
+
+  const lever = new Lever(torque);
+
+  function torque_pedal() {
+    torque.actual = torque.desired;
+    force = torque.actual + drag;
+    acceleration.actual = force/mass;
+    velocity.actual += acceleration.actual*dt;
+    direction = Math.sign(velocity.actual);
+    drag = -k_drag*velocity.actual;
+    power_drag = drag*velocity.actual;
+    power_vehicle.actual = force*velocity.actual;
+    power_engine.actual = direction*(power_vehicle.actual - power_drag);
+    e_kinetic = mass*velocity.actual*velocity.actual/2;
+    e_kinetic_dot = power_vehicle.actual;
+    x += velocity.actual*dt;
+  }
+
+  function power_pedal() {
+    let _direction = (velocity.actual == 0) ? Math.sign(power_engine.desired) : direction;
+    let _power_engine = _direction*power_engine.desired;
+    let _e_kinetic = e_kinetic;
+    let _e_kinetic_dot = _power_engine - 2*k_drag/mass*_e_kinetic;
+    if (_e_kinetic_dot == 0) {
+      _torque = torque.actual;
+    } else {
+      let t0 = -_e_kinetic/_e_kinetic_dot;
+      if ((0 < t0) && (t0 < dt)) {
+        _e_kinetic = 0;
+      } else {
+        _e_kinetic += _e_kinetic_dot*dt;
+      }
+      let _velocity = _direction*Math.sqrt(2/mass*_e_kinetic);
+      let _drag = -k_drag*_velocity;
+      let _force = (_velocity != 0) ? _e_kinetic_dot/_velocity : torque.actual;
+      _torque = _force - _drag;
+      if (Math.abs(_torque) > Fmax) {
+        _torque = Fmax*Math.sign(_torque);
+      }
+    }
+    torque.desired = _torque;
+    torque_pedal();
+  }
+
+  function simulate() {
+    lever.slider.update_function();
+    sliders.forEach(slider => {slider.update();});
+  }
+
+  setInterval(simulate, 100);
+
+</script>
+
+</body>
+</html>
