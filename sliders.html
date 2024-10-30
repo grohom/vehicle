@@ -93,9 +93,9 @@
      power
    </text>
    <text xml:space="preserve"
-     x="82"
+     x="86"
      y="593">
-     <tspan>force</tspan>
+     <tspan>acc.</tspan>
    </text>
    <text xml:space="preserve"
      x="125"
@@ -112,6 +112,7 @@
   const drawing = document.getElementById("drawing");
 
   const clamp = (x, xmin, xmax) => x < xmin ? xmin : x > xmax ? xmax : x;
+  const clamp_abs = (x, xlim) => x < -xlim ? -xlim : x > xlim ? xlim : x;
 
   class Indicator {
     constructor(slider, klass="actual") {
@@ -220,8 +221,8 @@
   }
 
   const mass = 1;
-  const k_drag = 0.25;
-  const Fmax = 1;
+  const k_drag = 1;
+  const Fmax = 10;
   const vmax = Fmax/k_drag;
   const amax = Fmax/mass;
   const Pmax = Fmax*vmax;
@@ -230,20 +231,20 @@
   let force = 0;
   let drag = 0;
   let direction = 0;
-  let power_drag = 0;
+  let drag_power = 0;
   let e_kinetic = 0;
   let e_kinetic_dot = 0;
   let x = 0;
 
   // engine
-  const power_engine = new Slider(70, 78, 0, -Pmax, Pmax, power_pedal);
+  const engine_power = new Slider(70, 78, 0, -Pmax, Pmax, power_pedal);
   const torque = new Slider(120, 78, 0, -Fmax, Fmax, torque_pedal);
   // vehicle
-  const power_vehicle = new Slider(70, 368, 0, -Pmax, Pmax);
-  const acceleration = new Slider(120, 368, 0, -amax, amax);
-  const velocity = new Slider(170, 368, 0, -vmax, vmax);
+  const vehicle_power = new Slider(70, 368, 0, -Pmax, Pmax, vehicle_power_pedal);
+  const acceleration = new Slider(120, 368, 0, -amax, amax, acceleration_pedal);
+  const velocity = new Slider(170, 368, 0, -vmax, vmax, velocity_pedal);
 
-  const sliders = [power_engine, torque, power_vehicle, acceleration, velocity];
+  const sliders = [engine_power, torque, vehicle_power, acceleration, velocity];
 
   const lever = new Lever(torque);
 
@@ -254,19 +255,19 @@
     velocity.actual += acceleration.actual*dt;
     direction = Math.sign(velocity.actual);
     drag = -k_drag*velocity.actual;
-    power_drag = drag*velocity.actual;
-    power_vehicle.actual = force*velocity.actual;
-    power_engine.actual = direction*(power_vehicle.actual - power_drag);
+    drag_power = drag*velocity.actual;
+    vehicle_power.actual = force*velocity.actual;
+    engine_power.actual = direction*(vehicle_power.actual - drag_power);
     e_kinetic = mass*velocity.actual*velocity.actual/2;
-    e_kinetic_dot = power_vehicle.actual;
+    e_kinetic_dot = vehicle_power.actual;
     x += velocity.actual*dt;
   }
 
   function power_pedal() {
-    let _direction = (velocity.actual == 0) ? Math.sign(power_engine.desired) : direction;
-    let _power_engine = _direction*power_engine.desired;
+    let _direction = (velocity.actual == 0) ? Math.sign(engine_power.desired) : direction;
+    let _engine_power = _direction*engine_power.desired;
     let _e_kinetic = e_kinetic;
-    let _e_kinetic_dot = _power_engine - 2*k_drag/mass*_e_kinetic;
+    let _e_kinetic_dot = _engine_power - 2*k_drag/mass*_e_kinetic;
     if (_e_kinetic_dot == 0) {
       _torque = torque.actual;
     } else {
@@ -280,12 +281,36 @@
       let _drag = -k_drag*_velocity;
       let _force = (_velocity != 0) ? _e_kinetic_dot/_velocity : torque.actual;
       _torque = _force - _drag;
-      if (Math.abs(_torque) > Fmax) {
-        _torque = Fmax*Math.sign(_torque);
-      }
+      _torque = clamp_abs(_torque, Fmax);
     }
     torque.desired = _torque;
     torque_pedal();
+  }
+
+  function vehicle_power_pedal() {
+    let _direction = (velocity.actual == 0) ? Math.sign(vehicle_power.desired) : direction;
+    let _vehicle_power = vehicle_power.desired;
+    let _engine_power = _vehicle_power - _direction*k_drag*velocity.actual*velocity.actual;
+    _engine_power = clamp_abs(_engine_power, Pmax);
+    engine_power.desired = _engine_power;
+    power_pedal();
+  }
+
+  function acceleration_pedal() {
+    let _direction = (velocity.actual == 0) ? Math.sign(acceleration.desired) : direction;
+    let _acceleration = acceleration.desired;
+    let _vehicle_power = _direction*mass*_acceleration*velocity.actual;
+    _vehicle_power = clamp_abs(_vehicle_power, Pmax);
+    vehicle_power.desired = _vehicle_power;
+    vehicle_power_pedal();
+  }
+
+  function velocity_pedal() {
+    direction = (velocity.actual == 0) ? Math.sign(velocity.desired) : direction;
+    let _acceleration = (velocity.desired - velocity.actual)/dt;
+    _acceleration = clamp_abs(_acceleration, amax);
+    acceleration.desired = _acceleration;
+    acceleration_pedal();
   }
 
   function simulate() {
