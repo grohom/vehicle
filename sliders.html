@@ -366,7 +366,7 @@
 
   // when the up arrow key is pressed, the lever goes up 10 pixels
   // when the down arrow key is pressed, the lever goes down 10 pixels
-  document.addEventListener("keyup", (evt) => {
+  document.addEventListener("keydown", (evt) => {
     if ((evt.key == "ArrowUp") || (evt.key == "ArrowDown")) {
       let y = lever.slider.newY(lever.knob.cy.baseVal.value + (evt.key == "ArrowUp" ? -10 : 10));
       lever.knob.setAttribute("cy", y);
