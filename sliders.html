@@ -5,6 +5,11 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Vehicle motion</title>
   <style>
+
+    body {
+      background-color: #e8e8e8;
+    }
+    
     svg {
       -webkit-user-select: none; /* Safari */
       -ms-user-select: none; /* IE 10 and IE 11 */
@@ -26,8 +31,8 @@
     }
 
     .slider-frame {
-      fill: #ddd;
-      stroke: #fff;
+      fill: #aaa;
+      stroke: rgba(0,0,0,0);
       stroke-width: 2;
     }
 
@@ -35,22 +40,16 @@
       stroke: #08f;
     }
 
-    .hidden {
-      display: none;
-    }
-
-    #brake {
-      fill: gray;
-    }
-    #brake.on {
+    .brake {
       fill: red;
     }
-
-    #direction {
-      fill: darkgreen;
+    
+    .reverse {
+      fill: white;
     }
-    #direction.reverse {
-      fill: blueviolet;
+
+    .forward {
+      fill: #d8d8d8;
     }
 
   </style>
@@ -68,7 +67,8 @@
    xmlns:svg="http://www.w3.org/2000/svg">
    <g>
    <rect
-     style="fill:none;stroke:#a0a0a0;stroke-width:2;stroke-linejoin:round;stroke-opacity:1"
+     style="stroke:#a0a0a0;stroke-width:2;stroke-linejoin:round;stroke-opacity:1"
+     class="forward"
      width="120"
      height="250"
      x="35"
@@ -92,7 +92,8 @@
      torque
    </text>
    <rect
-    style="fill:none;stroke:#a0a0a0;stroke-width:2;stroke-linejoin:round;stroke-opacity:1"
+    style="stroke:#a0a0a0;stroke-width:2;stroke-linejoin:round;stroke-opacity:1"
+    class="forward"
     width="170"
     height="250"
     x="35"
@@ -120,32 +121,6 @@
      y="593">
      velocity
    </text>
-   </g>
-   <g>
-   <rect
-     id="brake"
-     width="60"
-     height="20"
-     x="200"
-     y="70" />
-    <text
-     x="214"
-     y="84"
-     fill="white">
-     brake
-    </text>
-   <rect
-     id="direction"
-     width="60"
-     height="20"
-     x="200"
-     y="120" />
-    <text
-     x="205"
-     y="134"
-     fill="white">
-     direction
-    </text>
    </g>
 </svg>
 
@@ -264,20 +239,6 @@
 
   }
 
-  class Transmission {
-    constructor() {
-      this.direction = document.getElementById("direction");
-      this.brake = document.getElementById("brake");
-    }
-
-    update() {
-      if (direction < 0) this.direction.classList.add("reverse");
-      else this.direction.classList.remove("reverse");
-      if (engine_power < 0) this.brake.classList.add("on");
-      else this.brake.classList.remove("on");
-    }
-  }
-
   const mass = 1;
   const k_drag = 1;
   const Fmax = 1;
@@ -303,10 +264,8 @@
   const vehicle_power = new Slider(70, 368, 0, -Pmax, Pmax, vehicle_power_pedal);
   const acceleration = new Slider(120, 368, 0, -amax, amax, acceleration_pedal);
   const velocity = new Slider(170, 368, 0, -vmax, vmax, velocity_pedal);
-  // transmission
-  const transmission = new Transmission();
 
-  const sliders = [transmitted_power, transmitted_torque, vehicle_power, acceleration, velocity, transmission];
+  const sliders = [transmitted_power, transmitted_torque, vehicle_power, acceleration, velocity];
 
   const lever = new Lever(transmitted_torque);
 
@@ -378,8 +337,33 @@
     acceleration_pedal();
   }
 
+  let brake = engine_power < 0;
+  let old_brake, old_direction;
+  const boxes = [...document.getElementsByClassName("forward")];
+
   function simulate() {
+    old_brake = brake;
+    old_direction = direction;
     lever.slider.update_function();
+    brake = engine_power < 0;
+    direction = Math.sign(velocity.actual);
+    if (old_brake != brake) {
+      if (brake) {
+        sliders.forEach(slider => {slider.indicator.knob.classList.add("brake");});
+        lever.knob.classList.add("brake");
+      } else {
+        sliders.forEach(slider => {slider.indicator.knob.classList.remove("brake");});
+        lever.knob.classList.remove("brake");
+      }
+    }
+    if (old_direction != direction) {
+      if (direction == -1) {
+        boxes.forEach(box => {box.classList.remove("forward");box.classList.add("reverse");});
+      } else if (direction == 1) {
+        boxes.forEach(box => {box.classList.remove("reverse");box.classList.add("forward");});
+      } else {
+      }
+    }
     sliders.forEach(slider => {slider.update();});
   }
 
