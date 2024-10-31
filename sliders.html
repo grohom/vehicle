@@ -5,6 +5,11 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Vehicle motion</title>
   <style>
+    svg {
+      -webkit-user-select: none; /* Safari */
+      -ms-user-select: none; /* IE 10 and IE 11 */
+      user-select: none; /* Standard syntax */
+    }
 
     svg text {
       font-family: sans-serif;
@@ -33,6 +38,21 @@
     .hidden {
       display: none;
     }
+
+    #brake {
+      fill: gray;
+    }
+    #brake.on {
+      fill: red;
+    }
+
+    #direction {
+      fill: darkgreen;
+    }
+    #direction.reverse {
+      fill: blueviolet;
+    }
+
   </style>
 </head>
 <body>
@@ -55,7 +75,7 @@
      y="60"
      rx="4"
      ry="4" />
-   <line x1="95" y1="178" x2="155" y2="178" stroke="red" />
+   <line x1="35" y1="178" x2="155" y2="178" stroke="red" />
    <text
      x="75"
      y="50">
@@ -79,7 +99,7 @@
     y="350"
     rx="4"
     ry="4" />
-    <line x1="95" y1="468" x2="205" y2="468" stroke="red" />
+    <line x1="35" y1="468" x2="205" y2="468" stroke="red" />
     <text
      x="101"
      y="341">
@@ -100,6 +120,32 @@
      y="593">
      velocity
    </text>
+   </g>
+   <g>
+   <rect
+     id="brake"
+     width="60"
+     height="20"
+     x="200"
+     y="70" />
+    <text
+     x="214"
+     y="84"
+     fill="white">
+     brake
+    </text>
+   <rect
+     id="direction"
+     width="60"
+     height="20"
+     x="200"
+     y="120" />
+    <text
+     x="205"
+     y="134"
+     fill="white">
+     direction
+    </text>
    </g>
 </svg>
 
@@ -218,13 +264,27 @@
 
   }
 
+  class Transmission {
+    constructor() {
+      this.direction = document.getElementById("direction");
+      this.brake = document.getElementById("brake");
+    }
+
+    update() {
+      if (direction < 0) this.direction.classList.add("reverse");
+      else this.direction.classList.remove("reverse");
+      if (engine_power < 0) this.brake.classList.add("on");
+      else this.brake.classList.remove("on");
+    }
+  }
+
   const mass = 1;
   const k_drag = 1;
-  const Fmax = 10;
+  const Fmax = 1;
   const vmax = Fmax/k_drag;
   const amax = Fmax/mass;
   const Pmax = Fmax*vmax;
-  const dt = 0.1;
+  const dt = 0.05;
 
   let force = 0;
   let drag = 0;
@@ -237,14 +297,16 @@
   let x = 0;
 
   // engine
-  const transmitted_power = new Slider(70, 78, 0, 0, Pmax, transmitted_power_pedal);
+  const transmitted_power = new Slider(70, 78, 0, -Pmax, Pmax, transmitted_power_pedal);
   const transmitted_torque = new Slider(120, 78, 0, -Fmax, Fmax, transmitted_torque_pedal);
   // vehicle
-  const vehicle_power = new Slider(70, 368, 0, 0, Pmax, vehicle_power_pedal);
+  const vehicle_power = new Slider(70, 368, 0, -Pmax, Pmax, vehicle_power_pedal);
   const acceleration = new Slider(120, 368, 0, -amax, amax, acceleration_pedal);
   const velocity = new Slider(170, 368, 0, -vmax, vmax, velocity_pedal);
+  // transmission
+  const transmission = new Transmission();
 
-  const sliders = [transmitted_power, transmitted_torque, vehicle_power, acceleration, velocity];
+  const sliders = [transmitted_power, transmitted_torque, vehicle_power, acceleration, velocity, transmission];
 
   const lever = new Lever(transmitted_torque);
 
@@ -259,7 +321,7 @@
     drag_power = drag*velocity.actual;
     vehicle_power.actual = force*velocity.actual;
     engine_power = vehicle_power.actual - drag_power;
-    transmitted_power.actual = engine_power;
+    transmitted_power.actual = direction*engine_power;
     e_kinetic = mass*velocity.actual*velocity.actual/2;
     e_kinetic_dot = vehicle_power.actual;
     x += velocity.actual*dt;
@@ -268,7 +330,7 @@
   function transmitted_power_pedal() {
     let _direction = (velocity.actual == 0) ? Math.sign(transmitted_power.desired) : direction;
     let _transmitted_power = transmitted_power.desired;
-    let _engine_power = _transmitted_power;
+    let _engine_power = _direction*_transmitted_power;
     let _e_kinetic = e_kinetic;
     let _e_kinetic_dot = _engine_power - 2*k_drag/mass*_e_kinetic;
     if (_e_kinetic_dot == 0) {
@@ -291,17 +353,19 @@
   }
 
   function vehicle_power_pedal() {
+    let _direction = (velocity.actual == 0) ? Math.sign(vehicle_power.desired) : direction;
     let _vehicle_power = vehicle_power.desired;
-    let _engine_power = _vehicle_power + k_drag*velocity.actual*velocity.actual;
-    let _transmitted_power = _engine_power;
+    let _engine_power = _direction*_vehicle_power + k_drag*velocity.actual*velocity.actual;
+    let _transmitted_power = _direction*_engine_power;
     _transmitted_power = clamp_abs(_transmitted_power, Pmax);
     transmitted_power.desired = _transmitted_power;
     transmitted_power_pedal();
   }
 
   function acceleration_pedal() {
+    let _direction = (velocity.actual == 0) ? Math.sign(acceleration.desired) : direction;
     let _acceleration = acceleration.desired;
-    let _vehicle_power = mass*_acceleration*velocity.actual;
+    let _vehicle_power = _direction*mass*_acceleration*velocity.actual;
     _vehicle_power = clamp_abs(_vehicle_power, Pmax);
     vehicle_power.desired = _vehicle_power;
     vehicle_power_pedal();
@@ -310,7 +374,7 @@
   function velocity_pedal() {
     let _acceleration = (velocity.desired - velocity.actual)/dt;
     _acceleration = clamp_abs(_acceleration, amax);
-    acceleration.desired = _acceleration;
+    acceleration.desired += 0.9*(_acceleration - acceleration.desired);
     acceleration_pedal();
   }
 
