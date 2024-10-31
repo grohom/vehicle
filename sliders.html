@@ -75,7 +75,7 @@
      y="60"
      rx="4"
      ry="4" />
-   <line x1="35" y1="178" x2="155" y2="178" stroke="red" />
+   <line x1="35" y1="178" x2="155" y2="178" stroke="grey" />
    <text
      x="75"
      y="50">
@@ -100,7 +100,7 @@
     y="350"
     rx="4"
     ry="4" />
-    <line x1="35" y1="468" x2="205" y2="468" stroke="red" />
+    <line x1="35" y1="468" x2="205" y2="468" stroke="grey" />
     <text
      x="101"
      y="341">
@@ -156,7 +156,6 @@
       slider.frame.classList.add("slider-selected");
       this.slider = slider;
 
-      // this.isDragging = false;
       this.dy = 0;
 
       let knobMove = (evt) => {
@@ -166,10 +165,8 @@
       let knobRelease = (evt) => {
         drawing.removeEventListener("mousemove", knobMove);
         window.removeEventListener("mouseup", knobRelease);
-        // this.isDragging = false;
       };
       let knobGrab = (evt) => {
-        // this.isDragging = true;
         this.dy = evt.offsetY - this.knob.cy.baseVal.value;
         drawing.addEventListener("mousemove", knobMove);
         window.addEventListener("mouseup", knobRelease);
@@ -342,8 +339,6 @@
   const boxes = [...document.getElementsByClassName("forward")];
 
   function simulate() {
-    old_brake = brake;
-    old_direction = direction;
     lever.slider.update_function();
     brake = engine_power < 0;
     direction = Math.sign(velocity.actual);
@@ -364,8 +359,20 @@
       } else {
       }
     }
+    old_brake = brake;
+    old_direction = direction;
     sliders.forEach(slider => {slider.update();});
   }
+
+  // when the up arrow key is pressed, the lever goes up 10 pixels
+  // when the down arrow key is pressed, the lever goes down 10 pixels
+  document.addEventListener("keyup", (evt) => {
+    if ((evt.key == "ArrowUp") || (evt.key == "ArrowDown")) {
+      let y = lever.slider.newY(lever.knob.cy.baseVal.value + (evt.key == "ArrowUp" ? -10 : 10));
+      lever.knob.setAttribute("cy", y);
+    }
+  });
+
 
   setInterval(simulate, 100);
 
