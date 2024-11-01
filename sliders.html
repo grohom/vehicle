@@ -32,8 +32,8 @@
 
     .slider-frame {
       fill: #aaa;
-      stroke: rgba(0,0,0,0);
-      stroke-width: 2;
+      stroke: #999;
+      stroke-width: 4;
     }
 
     .slider-selected {
@@ -57,15 +57,14 @@
 <body>
 
 <svg
-   width="600"
+   width="1000"
    height="600"
-   viewBox="0 0 610 610"
+   viewBox="0 0 1000 610"
    version="1.1"
-   id="drawing"
   
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-   <g>
+   <g id="drawing" transform="translate(50,0)">
    <rect
      style="stroke:#a0a0a0;stroke-width:2;stroke-linejoin:round;stroke-opacity:1"
      class="forward"
@@ -121,6 +120,9 @@
      y="593">
      velocity
    </text>
+
+   <circle cx="600" cy="325" r="250" fill="none" stroke="rgb(210, 210, 210)" stroke-width="50" />
+   <rect id="car" x="570" y="61" width="60" height="30" rx="20" ry="10" fill="rgb(140, 140, 140)"/>
    </g>
 </svg>
 
@@ -191,26 +193,28 @@
       this.maxVal = maxVal;
       this.scale = this.height/(maxVal - minVal);
       this.actual = val;
-      this.desired = val;
-      this.update_function = update_function;
       let frame = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       frame.classList.add("slider-frame");
-      frame.setAttribute("x", x0 - this.r - 1);
-      frame.setAttribute("y", y0 - this.r - 1);
-      frame.setAttribute("width", 2*this.r + 2);
-      frame.setAttribute("height", this.height + 2*this.r + 2);
-      frame.setAttribute("rx", this.r + 1);
-      frame.setAttribute("ry", this.r + 1);
+      frame.setAttribute("x", x0 - this.r - 2);
+      frame.setAttribute("y", y0 - this.r - 2);
+      frame.setAttribute("width", 2*this.r + 4);
+      frame.setAttribute("height", this.height + 2*this.r + 4);
+      frame.setAttribute("rx", this.r + 2);
+      frame.setAttribute("ry", this.r + 2);
       drawing.appendChild(frame);
-      let selectSlider = (evt) => {
-        if (lever.slider != this) {
-          lever.slider.frame.classList.remove("slider-selected");
-          lever.activateForSlider(this);
-          lever.slider.desired = lever.slider.actual;
-          lever.slider.frame.classList.add("slider-selected");
-        }
-      };
-      frame.addEventListener("mousedown", selectSlider);
+      if (update_function) {
+        this.update_function = update_function;
+        this.desired = val;
+        let selectSlider = (evt) => {
+          if (lever.slider != this) {
+            lever.slider.frame.classList.remove("slider-selected");
+            lever.activateForSlider(this);
+            lever.slider.desired = lever.slider.actual;
+            lever.slider.frame.classList.add("slider-selected");
+          }
+        };
+        frame.addEventListener("mousedown", selectSlider);
+      }
       this.frame = frame;
       this.indicator = new Indicator(this);
     }
@@ -337,6 +341,7 @@
   let brake = engine_power < 0;
   let old_brake, old_direction;
   const boxes = [...document.getElementsByClassName("forward")];
+  const car = document.getElementById("car");
 
   function simulate() {
     lever.slider.update_function();
@@ -362,6 +367,8 @@
     old_brake = brake;
     old_direction = direction;
     sliders.forEach(slider => {slider.update();});
+    // rotate the car by x degress
+    car.setAttribute("transform", "rotate(" + x*50 + " 600 325)");
   }
 
   // when the up arrow key is pressed, the lever goes up 10 pixels
