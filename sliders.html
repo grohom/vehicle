@@ -186,22 +186,23 @@
   class Slider {
     height = 200;
     r = 10;
-    constructor(x0, y0, val, minVal, maxVal, reversible=false, update_function=null) {
+    border = 4;
+    half_border = 2;
+    constructor(x0, y0, val, minVal, maxVal, update_function=null) {
       this.x0 = x0;
       this.y0 = y0;
       this.minVal = minVal;
       this.maxVal = maxVal;
       this.scale = this.height/(maxVal - minVal);
       this.actual = val;
-      this.reversible = reversible;
       let frame = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       frame.classList.add("slider-frame");
-      frame.setAttribute("x", x0 - this.r - 2);
-      frame.setAttribute("y", y0 - this.r - 2);
-      frame.setAttribute("width", 2*this.r + 4);
-      frame.setAttribute("height", this.height + 2*this.r + 4);
-      frame.setAttribute("rx", this.r + 2);
-      frame.setAttribute("ry", this.r + 2);
+      frame.setAttribute("x", x0 - this.r - this.half_border);
+      frame.setAttribute("y", y0 - this.r - this.half_border);
+      frame.setAttribute("width", 2*this.r + this.border);
+      frame.setAttribute("height", this.height + 2*this.r + this.border);
+      frame.setAttribute("rx", this.r + this.half_border);
+      frame.setAttribute("ry", this.r + this.half_border);
       drawing.appendChild(frame);
       if (update_function) {
         this.update_function = update_function;
@@ -231,13 +232,11 @@
     }
 
     val2y(val) {
-      if (this.reversible) val *= direction;
       return this.y0 + (this.maxVal - val)*this.scale;
     }
 
     y2val(y) {
-      let val = this.maxVal - (y - this.y0)/this.scale;
-      return this.reversible ? val : direction*val;
+      return this.maxVal - (y - this.y0)/this.scale;
     }
 
   }
@@ -261,12 +260,12 @@
   let x = 0;
 
   // engine
-  const transmitted_power = new Slider(70, 78, 0, -Pmax, Pmax, true, transmitted_power_pedal);
-  const transmitted_torque = new Slider(120, 78, 0, -Fmax, Fmax, true, transmitted_torque_pedal);
+  const transmitted_power = new Slider(70, 78, 0, -Pmax, Pmax, transmitted_power_pedal);
+  const transmitted_torque = new Slider(120, 78, 0, -Fmax, Fmax, transmitted_torque_pedal);
   // vehicle
-  const vehicle_power = new Slider(70, 368, 0, -Pmax, Pmax, true, vehicle_power_pedal);
-  const acceleration = new Slider(120, 368, 0, -amax, amax, false, acceleration_pedal);
-  const velocity = new Slider(170, 368, 0, -vmax, vmax, false, velocity_pedal);
+  const vehicle_power = new Slider(70, 368, 0, -Pmax, Pmax, vehicle_power_pedal);
+  const acceleration = new Slider(120, 368, 0, -amax, amax, acceleration_pedal);
+  const velocity = new Slider(170, 368, 0, -vmax, vmax, velocity_pedal);
 
   const sliders = [transmitted_power, transmitted_torque, vehicle_power, acceleration, velocity];
 
@@ -274,16 +273,15 @@
 
   function transmitted_torque_pedal() {
     transmitted_torque.actual = transmitted_torque.desired;
-    torque = transmitted_torque.actual;
+    torque = direction*transmitted_torque.actual;
     force = transmitted_torque.actual + drag;
     acceleration.actual = force/mass;
     velocity.actual += acceleration.actual*dt;
-    // direction = Math.sign(velocity.actual);
     drag = -k_drag*velocity.actual;
     drag_power = drag*velocity.actual;
     vehicle_power.actual = force*velocity.actual;
     engine_power = vehicle_power.actual - drag_power;
-    transmitted_power.actual = engine_power;
+    transmitted_power.actual = direction*engine_power;
     e_kinetic = mass*velocity.actual*velocity.actual/2;
     e_kinetic_dot = vehicle_power.actual;
     x += velocity.actual*dt;
@@ -315,19 +313,19 @@
   }
 
   function vehicle_power_pedal() {
-    // let _direction = (velocity.actual == 0) ? Math.sign(vehicle_power.desired) : direction;
+    let _direction = (velocity.actual == 0) ? Math.sign(vehicle_power.desired) : direction;
     let _vehicle_power = vehicle_power.desired;
-    let _engine_power = _vehicle_power + k_drag*velocity.actual*velocity.actual;
-    let _transmitted_power = _engine_power;
+    let _engine_power = _direction*_vehicle_power + k_drag*velocity.actual*velocity.actual;
+    let _transmitted_power = _direction*_engine_power;
     _transmitted_power = clamp_abs(_transmitted_power, Pmax);
     transmitted_power.desired = _transmitted_power;
     transmitted_power_pedal();
   }
 
   function acceleration_pedal() {
-    // let _direction = (velocity.actual == 0) ? Math.sign(acceleration.desired) : direction;
+    let _direction = (velocity.actual == 0) ? Math.sign(acceleration.desired) : direction;
     let _acceleration = acceleration.desired;
-    let _vehicle_power = mass*_acceleration*velocity.actual;
+    let _vehicle_power = _direction*mass*_acceleration*velocity.actual;
     _vehicle_power = clamp_abs(_vehicle_power, Pmax);
     vehicle_power.desired = _vehicle_power;
     vehicle_power_pedal();
@@ -346,9 +344,9 @@
   const car = document.getElementById("car");
 
   function simulate() {
-    lever.slider.update_function();
     brake = engine_power < 0;
     direction = Math.sign(velocity.actual);
+    lever.slider.update_function();
     if (old_brake != brake) {
       if (brake) {
         sliders.forEach(slider => {slider.indicator.knob.classList.add("brake");});
@@ -360,21 +358,18 @@
     }
     if (old_direction != direction) {
       if (direction == -1) {
-        boxes.forEach(box => {box.classList.remove("forward");box.classList.add("reverse");});
+        boxes.forEach(box => {box.classList.remove("forward"); box.classList.add("reverse");});
       } else if (direction == 1) {
-        boxes.forEach(box => {box.classList.remove("reverse");box.classList.add("forward");});
+        boxes.forEach(box => {box.classList.remove("reverse"); box.classList.add("forward");});
       } else {
       }
     }
     old_brake = brake;
     old_direction = direction;
     sliders.forEach(slider => {slider.update();});
-    // rotate the car by x degress
     car.setAttribute("transform", "rotate(" + x*50 + " 600 325)");
   }
 
-  // when the up arrow key is pressed, the lever goes up 10 pixels
-  // when the down arrow key is pressed, the lever goes down 10 pixels
   document.addEventListener("keydown", (evt) => {
     if ((evt.key == "ArrowUp") || (evt.key == "ArrowDown")) {
       let y = lever.slider.newY(lever.knob.cy.baseVal.value + (evt.key == "ArrowUp" ? -10 : 10));
