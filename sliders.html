@@ -205,6 +205,8 @@
       frame.setAttribute("rx", this.r_plus_half_border);
       frame.setAttribute("ry", this.r_plus_half_border);
       drawing.appendChild(frame);
+      this.frame = frame;
+      this.indicator = new Indicator(this);
       if (update_function) {
         this.update_function = update_function;
         this.desired = val;
@@ -217,9 +219,8 @@
           }
         };
         frame.addEventListener("mousedown", selectSlider);
+        // this.indicator.knob.addEventListener("mousedown", selectSlider);
       }
-      this.frame = frame;
-      this.indicator = new Indicator(this);
     }
 
     newY(y) {
@@ -340,8 +341,9 @@
     acceleration_pedal();
   }
 
-  let brake = engine_power < 0;
-  let old_brake, old_direction;
+  let brake = false;
+  let old_brake = false;
+  let old_direction = 0;
   const boxes = [...document.getElementsByClassName("forward")];
   const car = document.getElementById("car");
 
@@ -370,14 +372,14 @@
     old_direction = direction;
     sliders.forEach(slider => {slider.update();});
     // rotate the car by x degress
-    car.setAttribute("transform", "rotate(" + x*50 + " 600 325)");
+    car.setAttribute("transform", "rotate(" + (90 - x*50) + " 600 325)");
   }
 
   // when the up arrow key is pressed, the lever goes up 10 pixels
   // when the down arrow key is pressed, the lever goes down 10 pixels
   document.addEventListener("keydown", (evt) => {
     if ((evt.key == "ArrowUp") || (evt.key == "ArrowDown")) {
-      let y = lever.slider.newY(lever.knob.cy.baseVal.value + (evt.key == "ArrowUp" ? -10 : 10));
+      let y = lever.slider.newY(lever.knob.cy.baseVal.value + (evt.key == "ArrowUp" ? 10 : 10));
       lever.knob.setAttribute("cy", y);
     }
   });
