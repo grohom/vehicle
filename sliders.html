@@ -186,6 +186,9 @@
   class Slider {
     height = 200;
     r = 10;
+    border = 4;
+    half_border = 2;
+    r_plus_half_border = 12;
     constructor(x0, y0, val, minVal, maxVal, update_function=null) {
       this.x0 = x0;
       this.y0 = y0;
@@ -195,12 +198,12 @@
       this.actual = val;
       let frame = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       frame.classList.add("slider-frame");
-      frame.setAttribute("x", x0 - this.r - 2);
-      frame.setAttribute("y", y0 - this.r - 2);
-      frame.setAttribute("width", 2*this.r + 4);
-      frame.setAttribute("height", this.height + 2*this.r + 4);
-      frame.setAttribute("rx", this.r + 2);
-      frame.setAttribute("ry", this.r + 2);
+      frame.setAttribute("x", x0 - this.r_plus_half_border);
+      frame.setAttribute("y", y0 - this.r_plus_half_border);
+      frame.setAttribute("width", 2*this.r_plus_half_border);
+      frame.setAttribute("height", this.height + 2*this.r_plus_half_border);
+      frame.setAttribute("rx", this.r_plus_half_border);
+      frame.setAttribute("ry", this.r_plus_half_border);
       drawing.appendChild(frame);
       if (update_function) {
         this.update_function = update_function;
@@ -222,7 +225,6 @@
     newY(y) {
       y = clamp(y, this.y0, this.y0 + this.height);
       this.desired = this.y2val(y);
-      // simulate (update actual values for all sliders, corresponding to this.desired)
       return y;
     }
 
