@@ -290,53 +290,53 @@
   }
 
   function transmitted_power_pedal() {
-    let _direction = (velocity.actual == 0) ? Math.sign(transmitted_power.desired) : direction;
-    let _transmitted_power = transmitted_power.desired;
-    let _engine_power = _direction*_transmitted_power;
-    let _e_kinetic = e_kinetic;
-    let _e_kinetic_dot = _engine_power - 2*k_drag/mass*_e_kinetic;
-    if (_e_kinetic_dot == 0) {
-      _transmitted_torque = transmitted_torque.actual;
+    let desired_direction = (velocity.actual == 0) ? Math.sign(transmitted_power.desired) : direction;
+    let desired_transmitted_power = transmitted_power.desired;
+    let desired_engine_power = desired_direction*desired_transmitted_power;
+    let desired_e_kinetic = e_kinetic;
+    let desired_e_kinetic_dot = desired_engine_power - 2*k_drag/mass*desired_e_kinetic;
+    if (desired_e_kinetic_dot == 0) {
+      desired_transmitted_torque = transmitted_torque.actual;
     } else {
-      let t0 = -_e_kinetic/_e_kinetic_dot;
+      let t0 = -desired_e_kinetic/desired_e_kinetic_dot;
       if ((0 < t0) && (t0 < dt)) {
-        _e_kinetic = 0;
+        desired_e_kinetic = 0;
       } else {
-        _e_kinetic += _e_kinetic_dot*dt;
+        desired_e_kinetic += desired_e_kinetic_dot*dt;
       }
-      let _velocity = _direction*Math.sqrt(2/mass*_e_kinetic);
-      let _drag = -k_drag*_velocity;
-      let _force = (_velocity != 0) ? _e_kinetic_dot/_velocity : transmitted_torque.actual;
-      _transmitted_torque = _force - _drag;
-      _transmitted_torque = clamp_abs(_transmitted_torque, Fmax);
+      let desired_velocity = desired_direction*Math.sqrt(2/mass*desired_e_kinetic);
+      let desired_drag = -k_drag*desired_velocity;
+      let desired_force = (desired_velocity != 0) ? desired_e_kinetic_dot/desired_velocity : transmitted_torque.actual;
+      desired_transmitted_torque = desired_force - desired_drag;
+      desired_transmitted_torque = clamp_abs(desired_transmitted_torque, Fmax);
     }
-    transmitted_torque.desired = _transmitted_torque;
+    transmitted_torque.desired = desired_transmitted_torque;
     transmitted_torque_pedal();
   }
 
   function vehicle_power_pedal() {
-    let _direction = (velocity.actual == 0) ? Math.sign(vehicle_power.desired) : direction;
-    let _vehicle_power = vehicle_power.desired;
-    let _engine_power = _direction*_vehicle_power + k_drag*velocity.actual*velocity.actual;
-    let _transmitted_power = _direction*_engine_power;
-    _transmitted_power = clamp_abs(_transmitted_power, Pmax);
-    transmitted_power.desired = _transmitted_power;
+    let desired_direction = (velocity.actual == 0) ? Math.sign(vehicle_power.desired) : direction;
+    let desired_vehicle_power = desired_direction*vehicle_power.desired;
+    let desired_engine_power = desired_vehicle_power + k_drag*velocity.actual*velocity.actual;
+    let desired_transmitted_power = desired_direction*desired_engine_power;
+    desired_transmitted_power = clamp_abs(desired_transmitted_power, Pmax);
+    transmitted_power.desired = desired_transmitted_power;
     transmitted_power_pedal();
   }
 
   function acceleration_pedal() {
-    let _direction = (velocity.actual == 0) ? Math.sign(acceleration.desired) : direction;
-    let _acceleration = acceleration.desired;
-    let _vehicle_power = _direction*mass*_acceleration*velocity.actual;
-    _vehicle_power = clamp_abs(_vehicle_power, Pmax);
-    vehicle_power.desired = _vehicle_power;
+    let desired_direction = (velocity.actual == 0) ? Math.sign(acceleration.desired) : direction;
+    let desired_acceleration = acceleration.desired;
+    let desired_vehicle_power = desired_direction*mass*desired_acceleration*velocity.actual;
+    desired_vehicle_power = clamp_abs(desired_vehicle_power, Pmax);
+    vehicle_power.desired = desired_vehicle_power;
     vehicle_power_pedal();
   }
 
   function velocity_pedal() {
-    let _acceleration = (velocity.desired - velocity.actual)/dt;
-    _acceleration = clamp_abs(_acceleration, amax);
-    acceleration.desired += 0.9*(_acceleration - acceleration.desired);
+    let desired_acceleration = (velocity.desired - velocity.actual)/dt;
+    desired_acceleration = clamp_abs(desired_acceleration, amax);
+    acceleration.desired += 0.9*(desired_acceleration - acceleration.desired);
     acceleration_pedal();
   }
 
