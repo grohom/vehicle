@@ -186,9 +186,8 @@
   class Slider {
     height = 200;
     r = 10;
-    border = 4;
-    half_border = 2;
-    r_plus_half_border = 12;
+    // border = 4;
+    half_width = 10 + 4/2;
     constructor(x0, y0, val, minVal, maxVal, update_function=null) {
       this.x0 = x0;
       this.y0 = y0;
@@ -196,17 +195,20 @@
       this.maxVal = maxVal;
       this.scale = this.height/(maxVal - minVal);
       this.actual = val;
+      let group = document.createElementNS("http://www.w3.org/2000/svg", "g");
       let frame = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       frame.classList.add("slider-frame");
-      frame.setAttribute("x", x0 - this.r_plus_half_border);
-      frame.setAttribute("y", y0 - this.r_plus_half_border);
-      frame.setAttribute("width", 2*this.r_plus_half_border);
-      frame.setAttribute("height", this.height + 2*this.r_plus_half_border);
-      frame.setAttribute("rx", this.r_plus_half_border);
-      frame.setAttribute("ry", this.r_plus_half_border);
-      drawing.appendChild(frame);
+      frame.setAttribute("x", x0 - this.half_width);
+      frame.setAttribute("y", y0 - this.half_width);
+      frame.setAttribute("width", 2*this.half_width);
+      frame.setAttribute("height", this.height + 2*this.half_width);
+      frame.setAttribute("rx", this.half_width);
+      frame.setAttribute("ry", this.half_width);
+      group.appendChild(frame);
+      drawing.appendChild(group);
       this.frame = frame;
       this.indicator = new Indicator(this);
+      // group.appendChild(this.indicator.knob);
       if (update_function) {
         this.update_function = update_function;
         this.desired = val;
@@ -214,12 +216,11 @@
           if (lever.slider != this) {
             lever.slider.frame.classList.remove("slider-selected");
             lever.activateForSlider(this);
-            lever.slider.desired = lever.slider.actual;
             lever.slider.frame.classList.add("slider-selected");
+            lever.slider.desired = lever.slider.actual;
           }
         };
-        frame.addEventListener("mousedown", selectSlider);
-        // this.indicator.knob.addEventListener("mousedown", selectSlider);
+        group.addEventListener("mousedown", selectSlider);
       }
     }
 
@@ -253,51 +254,53 @@
 
   let force = 0;
   let drag = 0;
-  let direction = 0;
   let engine_power = 0;
   let torque = 0;
   let drag_power = 0;
   let e_kinetic = 0;
   let e_kinetic_dot = 0;
   let x = 0;
+  let brake = false;
+  let direction = 0;
 
   // engine
-  const transmitted_power = new Slider(70, 78, 0, -Pmax, Pmax, transmitted_power_pedal);
-  const transmitted_torque = new Slider(120, 78, 0, -Fmax, Fmax, transmitted_torque_pedal);
+  const displayed_engine_power = new Slider(70, 78, 0, -Pmax, Pmax, displayed_engine_power_pedal);
+  const displayed_torque = new Slider(120, 78, 0, -Fmax, Fmax, displayed_torque_pedal);
   // vehicle
-  const vehicle_power = new Slider(70, 368, 0, -Pmax, Pmax, vehicle_power_pedal);
+  const displayed_vehicle_power = new Slider(70, 368, 0, -Pmax, Pmax, displayed_vehicle_power_pedal);
   const acceleration = new Slider(120, 368, 0, -amax, amax, acceleration_pedal);
   const velocity = new Slider(170, 368, 0, -vmax, vmax, velocity_pedal);
 
-  const sliders = [transmitted_power, transmitted_torque, vehicle_power, acceleration, velocity];
+  const sliders = [displayed_engine_power, displayed_torque, displayed_vehicle_power, acceleration, velocity];
 
-  const lever = new Lever(transmitted_torque);
+  const lever = new Lever(displayed_torque);
 
-  function transmitted_torque_pedal() {
-    transmitted_torque.actual = transmitted_torque.desired;
-    torque = direction*transmitted_torque.actual;
-    force = transmitted_torque.actual + drag;
+  function displayed_torque_pedal() {
+    direction = (velocity.actual == 0) ? Math.sign(displayed_torque.desired) : direction;
+    displayed_torque.actual = displayed_torque.desired;
+    torque = direction*displayed_torque.actual;
+    force = displayed_torque.actual + drag;
     acceleration.actual = force/mass;
     velocity.actual += acceleration.actual*dt;
-    direction = Math.sign(velocity.actual);
+    // direction = Math.sign(velocity.actual);
     drag = -k_drag*velocity.actual;
     drag_power = drag*velocity.actual;
-    vehicle_power.actual = force*velocity.actual;
-    engine_power = vehicle_power.actual - drag_power;
-    transmitted_power.actual = direction*engine_power;
+    displayed_vehicle_power.actual = force*velocity.actual;
+    engine_power = displayed_vehicle_power.actual - drag_power;
+    displayed_engine_power.actual = direction*engine_power;
     e_kinetic = mass*velocity.actual*velocity.actual/2;
-    e_kinetic_dot = vehicle_power.actual;
+    e_kinetic_dot = displayed_vehicle_power.actual;
     x += velocity.actual*dt;
   }
 
-  function transmitted_power_pedal() {
-    let desired_direction = (velocity.actual == 0) ? Math.sign(transmitted_power.desired) : direction;
-    let desired_transmitted_power = transmitted_power.desired;
-    let desired_engine_power = desired_direction*desired_transmitted_power;
+  function displayed_engine_power_pedal() {
+    let desired_direction = (velocity.actual == 0) ? Math.sign(displayed_engine_power.desired) : direction;
+    let desired_displayed_power = displayed_engine_power.desired;
+    let desired_engine_power = desired_direction*desired_displayed_power;
     let desired_e_kinetic = e_kinetic;
     let desired_e_kinetic_dot = desired_engine_power - 2*k_drag/mass*desired_e_kinetic;
     if (desired_e_kinetic_dot == 0) {
-      desired_transmitted_torque = transmitted_torque.actual;
+      desired_displayed_torque = displayed_torque.actual;
     } else {
       let t0 = -desired_e_kinetic/desired_e_kinetic_dot;
       if ((0 < t0) && (t0 < dt)) {
@@ -307,22 +310,22 @@
       }
       let desired_velocity = desired_direction*Math.sqrt(2/mass*desired_e_kinetic);
       let desired_drag = -k_drag*desired_velocity;
-      let desired_force = (desired_velocity != 0) ? desired_e_kinetic_dot/desired_velocity : transmitted_torque.actual;
-      desired_transmitted_torque = desired_force - desired_drag;
-      desired_transmitted_torque = clamp_abs(desired_transmitted_torque, Fmax);
+      let desired_force = (desired_velocity != 0) ? desired_e_kinetic_dot/desired_velocity : displayed_torque.actual;
+      desired_displayed_torque = desired_force - desired_drag;
+      desired_displayed_torque = clamp_abs(desired_displayed_torque, Fmax);
     }
-    transmitted_torque.desired = desired_transmitted_torque;
-    transmitted_torque_pedal();
+    displayed_torque.desired = desired_displayed_torque;
+    displayed_torque_pedal();
   }
 
-  function vehicle_power_pedal() {
-    let desired_direction = (velocity.actual == 0) ? Math.sign(vehicle_power.desired) : direction;
-    let desired_vehicle_power = desired_direction*vehicle_power.desired;
+  function displayed_vehicle_power_pedal() {
+    let desired_direction = (velocity.actual == 0) ? Math.sign(displayed_vehicle_power.desired) : direction;
+    let desired_vehicle_power = desired_direction*displayed_vehicle_power.desired;
     let desired_engine_power = desired_vehicle_power + k_drag*velocity.actual*velocity.actual;
-    let desired_transmitted_power = desired_direction*desired_engine_power;
-    desired_transmitted_power = clamp_abs(desired_transmitted_power, Pmax);
-    transmitted_power.desired = desired_transmitted_power;
-    transmitted_power_pedal();
+    let desired_displayed_power = desired_direction*desired_engine_power;
+    desired_displayed_power = clamp_abs(desired_displayed_power, Pmax);
+    displayed_engine_power.desired = desired_displayed_power;
+    displayed_engine_power_pedal();
   }
 
   function acceleration_pedal() {
@@ -330,8 +333,8 @@
     let desired_acceleration = acceleration.desired;
     let desired_vehicle_power = desired_direction*mass*desired_acceleration*velocity.actual;
     desired_vehicle_power = clamp_abs(desired_vehicle_power, Pmax);
-    vehicle_power.desired = desired_vehicle_power;
-    vehicle_power_pedal();
+    displayed_vehicle_power.desired = desired_vehicle_power;
+    displayed_vehicle_power_pedal();
   }
 
   function velocity_pedal() {
@@ -341,7 +344,6 @@
     acceleration_pedal();
   }
 
-  let brake = false;
   let old_brake = false;
   let old_direction = 0;
   const boxes = [...document.getElementsByClassName("forward")];
@@ -371,15 +373,12 @@
     old_brake = brake;
     old_direction = direction;
     sliders.forEach(slider => {slider.update();});
-    // rotate the car by x degress
     car.setAttribute("transform", "rotate(" + (90 - x*50) + " 600 325)");
   }
 
-  // when the up arrow key is pressed, the lever goes up 10 pixels
-  // when the down arrow key is pressed, the lever goes down 10 pixels
   document.addEventListener("keydown", (evt) => {
     if ((evt.key == "ArrowUp") || (evt.key == "ArrowDown")) {
-      let y = lever.slider.newY(lever.knob.cy.baseVal.value + (evt.key == "ArrowUp" ? 10 : 10));
+      let y = lever.slider.newY(lever.knob.cy.baseVal.value + (evt.key == "ArrowUp" ? -10 : 10));
       lever.knob.setAttribute("cy", y);
     }
   });
