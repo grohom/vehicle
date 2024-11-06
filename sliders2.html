@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Vehicle motion</title>
+<style>
+
+:root {
+    --bgnd-color: #273544;
+    --road-color: #262626;
+    --car-color: oklch(80% 0.4 260deg);
+    --tail-light-color: #900;
+    --brake-color: red;
+    --light-color:#ffffb3;
+    --inactive-label-color: oklch(from var(--car-color) calc(0.7*l) 0 0);
+}
+
+body {
+    background-color:var(--bgnd-color);
+}
+  
+svg {
+  display:block;
+  margin:0 auto;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
+
+#svg-road {
+    fill:none;
+    stroke:var(--road-color);
+}
+
+#svg-inactive-labels {
+    fill:var(--inactive-label-color);
+}
+
+#svg-active-labels,
+#svg-car-base {
+    fill:oklch(from var(--car-color) calc(0.7*l) calc(0.4*c) h);
+}
+
+#svg-car-brake-light {
+    fill:var(--tail-light-color);
+}
+
+#svg-car-reverse-light {
+    fill: white;
+}
+
+#svg-car-headlights {
+    fill:var(--light-color);
+}
+
+#svg-slider-bgnd {
+    fill: oklch(from var(--light-color) calc(0.9*l) c h);
+    opacity:.6;
+}
+
+#svg-slider-knob {
+    fill:var(--tail-light-color);
+}
+
+#svg-slider-zero {
+    stroke:var(--bgnd-color)
+}
+
+#svg-slider-selection-border {
+    stroke:var(--car-color);
+    stroke-width:4;
+    fill: none;
+}
+
+#svg-slider-desired-knob {
+    stroke:var(--car-color);
+    stroke-width:4;
+    fill:none;
+    opacity:0.5;
+}
+
+</style>
+</head>
+
+<body>
+<svg width="1400" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <clipPath id="svg-car-shape">
+      <rect x="1339.5" y="490" width="60" height="100" rx="20" ry="30" fill="#2963a5"/>
+    </clipPath>
+    <radialGradient id="svg-headlight-gradient" cx="1353" cy="496.66" r="38.125" gradientTransform="matrix(.84787 1.2755 .81983 -3.0526 -202.23 306.01)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffb3" stop-opacity="0.5" offset="0"/>
+      <stop stop-color="#ffffb3" stop-opacity="0" offset="1"/>
+    </radialGradient>
+    <g id="svg-slider">
+        <rect id="svg-slider-bgnd" x="-14" y="-14" width="28" height="228" rx="14" ry="14"/>
+        <path id="svg-slider-zero"d="m-14 100h28z"/>
+        <circle id="svg-slider-knob" cx="0" cy="20" r="12"/>
+      </g>
+    </defs>
+  <circle id="svg-road" cx="960" cy="540" r="410" stroke-width="80"/>
+  <g id="svg-car">
+    <path id="svg-left-headlight-cone" d="m1352.1 515.72 38.302-140.03h-64.851z" fill="url(#svg-headlight-gradient)"/>
+    <use id="svg-right-headlight-cone" transform="matrix(-1 0 0 1 2739 0)" xlink:href="#svg-left-headlight-cone"/>
+    <g id="svg-car-body" transform="matrix(.85858 0 0 1 193.68 0)" clip-path="url(#svg-car-shape)">
+      <rect id="svg-car-base" x="1339.5" y="490" width="60" height="100"/>
+      <g id="svg-car-brake-light">
+        <rect x="1339.5" y="583.76" width="20.965" height="6.2365"/>
+        <rect x="1378.5" y="583.76" width="20.965" height="6.2365"/>
+      </g>
+      <rect id="svg-car-reverse-light" x="1360.5" y="583.76" width="18.07" height="6.2365"/>
+      <g id="svg-car-headlights">
+        <ellipse transform="matrix(.86593 -.50017 .61678 .78714 0 0)" cx="765.77" cy="1112.6" rx="8.7564" ry="5.0358"/>
+        <ellipse transform="matrix(-.86593 -.50017 -.61678 .78714 0 0)" cx="-1411.8" cy="-271.04" rx="8.7564" ry="5.0358"/>
+      </g>
+      <rect id="svg-car-top" x="1341.8" y="515.72" width="55.341" height="56.534" rx="23.294" ry="10" fill="black" opacity="0.2"/>
+    </g>
+  </g>
+  <g id="svg-labels" font-family="Sans" font-size="20px" text-anchor="middle">
+    <g id="svg-inactive-labels">
+      <g font-size="24px" font-weight="bold">
+        <text x="960" y="231"><tspan x="960" y="231">engine</tspan></text>
+        <text x="960" y="873"><tspan x="960" y="873">vehicle</tspan></text>
+      </g>
+      <text x="1092" y="513"><tspan x="1092" y="513">RPM</tspan></text>
+      <text x="711" y="647"><tspan x="711" y="647">drag</tspan><tspan x="711" y="671">power</tspan></text>
+      <text x="1209" y="647"><tspan x="1209" y="647">drag</tspan><tspan x="1209" y="671">force</tspan></text>
+    </g>
+    <g id="svg-active-labels">
+      <text x="828" y="513"><tspan x="828" y="513">power</tspan></text>
+      <text x="960" y="513"><tspan x="960" y="513">torque</tspan></text>
+      <text x="828" y="798"><tspan x="828" y="798">power</tspan></text>
+      <text x="960" y="798"><tspan x="960" y="798">acceleration</tspan><tspan x="960" y="822">(force)</tspan></text>
+      <text x="1092" y="798"><tspan x="1092" y="798">velocity</tspan></text>
+    </g>
+  </g>
+  <use transform="translate(828 277)" xlink:href="#svg-slider"/>
+  <use transform="translate(960 277)" xlink:href="#svg-slider"/>
+  <use transform="translate(1092 277)" xlink:href="#svg-slider"/>
+  <use transform="translate(711 411)" xlink:href="#svg-slider"/>
+  <use transform="translate(828 562)" xlink:href="#svg-slider"/>
+  <use transform="translate(960 562)" xlink:href="#svg-slider"/>
+  <use transform="translate(1092 562)" xlink:href="#svg-slider"/>
+  <use transform="translate(1209 411)" xlink:href="#svg-slider"/>
+  <circle id="svg-slider-desired-knob" cx="960" cy="297" r="18"/>
+</svg>
+</body>
+</html>
