@@ -237,6 +237,10 @@ svg {
       return y;
     }
 
+    reverse() {
+      [this.min_val, this.max_val, this.scale] = [this.max_val, this.min_val, -this.scale];
+    }
+
   }
 
   class Lever {
@@ -325,6 +329,7 @@ svg {
       }
     }
     if (old_direction != direction) {
+      if (old_direction != 0) [engine_power, drag_power, vehicle_power].forEach(slider => {slider.reverse();});
       if (direction == -1) {
         slider_bgnd_template.classList.add("reverse");
         car_reverse_light_template.classList.add("reverse");
