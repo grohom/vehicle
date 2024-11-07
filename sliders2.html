@@ -155,22 +155,10 @@ svg {
   const vmax = Fmax/k_drag;
   const Pmax = Fmax*vmax;
   const dt = 0.05;
-
-  const state = {
-    "direction": 0,
-    "engine_force": 0,
-    "drag_force": 0,
-    "vehicle_force": 0,
-    "engine_power": 0,
-    "drag_power": 0,
-    "vehicle_power": 0,
-    "e_kinetic": 0,
-    "velocity": 0
-    };
-  
+ 
   class Slider {
-    height = 200;
-    radius = 14;
+    height = slider_bgnd_template.height.baseVal.value - 2*slider_bgnd_template.rx.baseVal.value;
+    radius = slider_bgnd_template.rx.baseVal.value;
     constructor(label, x0, y0, value, lim_val, active=false) {
       this.x0 = x0;
       this.y0 = y0;
