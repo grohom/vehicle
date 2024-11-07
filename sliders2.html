@@ -170,12 +170,11 @@ svg {
   class Slider {
     height = 200;
     radius = 14;
-    constructor(label, x0, y0, value, min_val, max_val, active=false) {
+    constructor(label, x0, y0, value, lim_val, active=false) {
       this.x0 = x0;
       this.y0 = y0;
-      this.min_val = min_val;
-      this.max_val = max_val;
-      this.scale = this.height/(max_val - min_val);
+      this.lim_val = lim_val;
+      this.forward();
       this.value = value;
 
       let ypos = y0 + this.height + this.radius;
@@ -237,8 +236,12 @@ svg {
       return y;
     }
 
+    forward() {
+      [this.min_val, this.max_val, this.scale] = [-this.lim_val, this.lim_val, 0.5*this.height/this.lim_val];
+    }
+    
     reverse() {
-      [this.min_val, this.max_val, this.scale] = [this.max_val, this.min_val, -this.scale];
+      [this.min_val, this.max_val, this.scale] = [this.lim_val, -this.lim_val, -0.5*this.height/this.lim_val];
     }
 
   }
@@ -296,16 +299,16 @@ svg {
 
 
   // engine
-  const engine_power = new Slider("power", -131, -263, 0, -Pmax, Pmax, true);
-  const torque = new Slider("torque", 0, -263, 0, -Fmax, Fmax, true);
-  const rpm = new Slider("RPM", 131, -263, 0, -vmax, vmax, false);
+  const engine_power = new Slider("power", -131, -263, 0, Pmax, true);
+  const torque = new Slider("torque", 0, -263, 0, Fmax, true);
+  const rpm = new Slider("RPM", 131, -263, 0, vmax, false);
   // vehicle
-  const vehicle_power = new Slider("power", -131, 22, 0, -Pmax, Pmax, true);
-  const acceleration = new Slider("acceleration\n(force)", 0, 22, 0, -Fmax, Fmax, true);
-  const velocity = new Slider("velocity", 131, 22, 0, -vmax, vmax, true);
+  const vehicle_power = new Slider("power", -131, 22, 0, Pmax, true);
+  const acceleration = new Slider("acceleration\n(force)", 0, 22, 0, Fmax, true);
+  const velocity = new Slider("velocity", 131, 22, 0, vmax, true);
   // drag
-  const drag_power = new Slider("drag\npower", -249, -129, 0, -Pmax, Pmax, false);
-  const drag_force = new Slider("drag\nforce", 249, -129, 0, -Fmax, Fmax, false);
+  const drag_power = new Slider("drag\npower", -249, -129, 0, Pmax, false);
+  const drag_force = new Slider("drag\nforce", 249, -129, 0, Fmax, false);
 
   const sliders = [engine_power, torque, rpm, vehicle_power, acceleration, velocity, drag_power, drag_force];
 
@@ -329,16 +332,18 @@ svg {
       }
     }
     if (old_direction != direction) {
-      if (old_direction != 0) [engine_power, drag_power, vehicle_power].forEach(slider => {slider.reverse();});
       if (direction == -1) {
         slider_bgnd_template.classList.add("reverse");
         car_reverse_light_template.classList.add("reverse");
+        [engine_power, drag_power, vehicle_power].forEach(slider => {slider.reverse();});
       } else if (direction == 1) {
         slider_bgnd_template.classList.remove("reverse");
         car_reverse_light_template.classList.remove("reverse");
+        [engine_power, drag_power, vehicle_power].forEach(slider => {slider.forward();});
       } else {
         slider_bgnd_template.classList.remove("reverse");
         car_reverse_light_template.classList.remove("reverse");
+        [engine_power, drag_power, vehicle_power].forEach(slider => {slider.forward();});
       }
     }
     old_brake = brake;
