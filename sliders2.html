@@ -50,28 +50,32 @@ svg {
   fill:oklch(from var(--car-color) calc(0.7*l) calc(0.4*c) h);
 }
 
-#svg-car-brake-light {
+.svg-car-brake-light {
   fill:var(--tail-light-color);
 }
 
-#svg-car-reverse-light {
-  fill: white;
+.svg-car-reverse-light {
+  fill: none;
 }
 
 #svg-car-headlights {
   fill:var(--light-color);
 }
 
-#svg-slider-bgnd {
+.svg-slider-bgnd {
   fill: oklch(from var(--light-color) calc(0.9*l) c h);
   opacity:.6;
+}
+
+.reverse {
+  fill:white;
 }
 
 #svg-slider-zero {
   stroke:var(--bgnd-color);
 }
 
-.svg-slider-knob {
+.svg-knob {
   fill:var(--tail-light-color);
   opacity:0.8;
 }
@@ -80,7 +84,7 @@ svg {
   fill:var(--brake-color);
 }
 
-.svg-slider-desired-knob {
+.svg-desired-knob {
   stroke:var(--car-color);
   stroke-width:8;
   fill:#00000000;
@@ -94,11 +98,11 @@ svg {
 <svg id="drawing" width="900" height="900" viewBox="-450 -450 900 900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
     <g id="svg-slider">
-      <rect id="svg-slider-bgnd" x="-14" y="-14" width="28" height="228" rx="14" ry="14"/>
+      <rect id="svg-slider-bgnd-template" class="svg-slider-bgnd" x="-14" y="-14" width="28" height="228" rx="14" ry="14"/>
       <path id="svg-slider-zero" d="m-14 100h28z"/>
     </g>
-    <circle id="svg-knob" class="svg-slider-knob" r="14"/>
-    <circle id="svg-desired-knob" class="svg-slider-desired-knob" r="18"/>
+    <circle id="svg-knob-template" class="svg-knob" r="14"/>
+    <circle id="svg-desired-knob-template" class="svg-desired-knob" r="18"/>
     <clipPath id="svg-car-shape">
       <rect x="-25.75209" y="-50" width="51.514801" height="100" rx="20" ry="30"/>
     </clipPath>
@@ -111,11 +115,11 @@ svg {
       <use id="svg-right-headlight-cone" transform="scale(-1 1)" xlink:href="#svg-left-headlight-cone"/>
       <g id="svg-car-body" clip-path="url(#svg-car-shape)">
         <rect id="svg-car-base" x="-25.75209" y="-50" width="51.514801" height="100"/>
-        <g id="svg-car-brake-light">
+        <g id="svg-car-brake-light-template" class="svg-car-brake-light">
           <rect x="-25.75209" y="44" width="18.00013" height="6"/>
           <rect x="7.7325301" y="44" width="18.00013" height="6"/>
         </g>
-        <rect id="svg-car-reverse-light" x="-7.72191" y="44" width="15.514541" height="6"/>
+        <rect id="svg-car-reverse-light-template" class="svg-car-reverse-light" x="-7.72191" y="44" width="15.514541" height="6"/>
         <g id="svg-car-headlights">
           <ellipse transform="matrix(0.82971315,-0.55819001,0.55819442,0.82971019,0,0)" cx="12" cy="-48.847805" rx="7.8462324" ry="4.7774267"/>
           <ellipse transform="matrix(-0.82971315,-0.55819001,-0.55819442,0.82971019,0,0)" cx="12" cy="-48.847805" rx="7.8462324" ry="4.7774267"/>
@@ -135,7 +139,11 @@ svg {
 <script>
 
   const drawing = document.getElementById("drawing");
-  const knob_template = document.getElementById("svg-knob");
+  const knob_template = document.getElementById("svg-knob-template");
+  const slider_bgnd_template = document.getElementById("svg-slider-bgnd-template");
+  const car = document.getElementById("car");
+  const car_brake_light_template = document.getElementById("svg-car-brake-light-template");
+  const car_reverse_light_template = document.getElementById("svg-car-reverse-light-template");
 
   const clamp = (x, xmin, xmax) => x < xmin ? xmin : x > xmax ? xmax : x;
   const clamp_abs = (x, xlim) => x < -xlim ? -xlim : x > xlim ? xlim : x;
@@ -191,7 +199,7 @@ svg {
       drawing.appendChild(frame);
 
       let knob = document.createElementNS("http://www.w3.org/2000/svg", "use");
-      knob.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-knob");
+      knob.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-knob-template");
       knob.setAttribute("x", x0);
       drawing.appendChild(knob);
 
@@ -234,7 +242,7 @@ svg {
   class Lever {
     constructor(slider) {
       let knob = document.createElementNS("http://www.w3.org/2000/svg", "use");
-      knob.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-desired-knob");
+      knob.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-desired-knob-template");
       drawing.appendChild(knob);
       this.knob = knob;
       this.activateForSlider(slider)
@@ -267,6 +275,21 @@ svg {
 
   }
 
+  function torque_pedal() {
+    torque.value = torque.desired;
+    let force = torque.value + drag_force.value;
+    acceleration.value = force/mass;
+    velocity.value += acceleration.value*dt;
+    drag_force.value = -k_drag*velocity.value;
+    drag_power.value = drag_force.value*velocity.value;
+    vehicle_power.value = force*velocity.value;
+    engine_power.value = vehicle_power.value - drag_power.value;
+    // e_kinetic = mass*velocity.value*velocity.value/2;
+    // e_kinetic_dot = vehicle_power.value;
+    x += velocity.value*dt;
+  }
+
+
   // engine
   const engine_power = new Slider("power", -131, -263, 0, -Pmax, Pmax, true);
   const torque = new Slider("torque", 0, -263, 0, -Fmax, Fmax, true);
@@ -282,6 +305,43 @@ svg {
   const sliders = [engine_power, torque, rpm, vehicle_power, acceleration, velocity, drag_power, drag_force];
 
   const lever = new Lever(torque);
+
+  let old_brake = engine_power.value < 0;
+  let old_direction = Math.sign(velocity.value);
+
+  let x = 0;
+  function simulate() {
+    torque_pedal(); // !!!!
+    brake = engine_power.value < 0;
+    direction = Math.sign(velocity.value);
+    if (old_brake != brake) {
+      if (brake) {
+        knob_template.classList.add("brake");
+        car_brake_light_template.classList.add("brake");
+      } else {
+        knob_template.classList.remove("brake");
+        car_brake_light_template.classList.remove("brake");
+      }
+    }
+    if (old_direction != direction) {
+      if (direction == -1) {
+        slider_bgnd_template.classList.add("reverse");
+        car_reverse_light_template.classList.add("reverse");
+      } else if (direction == 1) {
+        slider_bgnd_template.classList.remove("reverse");
+        car_reverse_light_template.classList.remove("reverse");
+      } else {
+        slider_bgnd_template.classList.remove("reverse");
+        car_reverse_light_template.classList.remove("reverse");
+      }
+    }
+    old_brake = brake;
+    old_direction = direction;
+    sliders.forEach(slider => {slider.update_position();});
+    car.setAttribute("transform", `rotate(${-x*50})`);
+  }
+
+  setInterval(simulate, 100);
 
   document.addEventListener("keydown", (evt) => {
     if ((evt.key == "ArrowUp") || (evt.key == "ArrowDown")) {
