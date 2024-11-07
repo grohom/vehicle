@@ -280,6 +280,7 @@ svg {
     let force = torque.value + drag_force.value;
     acceleration.value = force/mass;
     velocity.value += acceleration.value*dt;
+    rpm.value = velocity.value;
     drag_force.value = -k_drag*velocity.value;
     drag_power.value = drag_force.value*velocity.value;
     vehicle_power.value = force*velocity.value;
