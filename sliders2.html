@@ -154,6 +154,7 @@ body {
   const Fmax = 1;
   const vmax = Fmax/k_drag;
   const Pmax = Fmax*vmax;
+  const amax = Fmax/mass;
   const dt = 0.05;
  
   class Slider {
@@ -308,18 +309,24 @@ body {
   }
 
   function acceleration_pedal() {
-    let desired_direction = (velocity.value == 0) ? Math.sign(acceleration.desired) : direction;
-    let desired_vehicle_power = desired_direction*mass*acceleration.desired*velocity.value;
-    vehicle_power.desired = desired_vehicle_power;
-    vehicle_power_pedal();
+    if (velocity.value == 0) {
+      // torque.desired = acceleration.desired*mass;
+      torque.desired = Fmax*Math.sign(acceleration.desired);
+      torque_pedal();
+    }
+    else {
+      let desired_vehicle_power = direction*mass*acceleration.desired*velocity.value;
+      vehicle_power.desired = desired_vehicle_power;
+      vehicle_power_pedal();
+    }
   }
 
   function velocity_pedal() {
-    let desired_acceleration = (velocity.desired - velocity.value)/dt;
-    acceleration.desired += 0.5*(desired_acceleration - acceleration.desired);
+    let desired_velocity = ((velocity.value == 0) || (Math.sign(velocity.desired) == Math.sign(velocity.value))) ? velocity.desired : 0;
+    let desired_acceleration = (desired_velocity - velocity.value)/dt;
+    acceleration.desired = clamp_abs(desired_acceleration, amax);
     acceleration_pedal();
   }
-
 
   // engine
   const engine_power = new Slider("power", -131, -263, 0, Pmax, engine_power_pedal);
