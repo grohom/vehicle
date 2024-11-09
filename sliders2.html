@@ -20,7 +20,7 @@ body {
   background-color:var(--bgnd-color);
 }
   
-#drawing {
+svg {
   display:block;
   margin:0 auto;
   -webkit-user-select: none; /* Safari */
@@ -95,7 +95,7 @@ body {
 </head>
 
 <body>
-<svg id="drawing" width="920" height="920" viewBox="-460 -460 920 920" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="920" height="920" viewBox="-460 -460 920 920" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
     <g id="svg-slider">
       <rect id="svg-slider-bgnd-template" class="svg-slider-bgnd" x="-14" y="-14" width="28" height="228" rx="14" ry="14"/>
@@ -128,13 +128,13 @@ body {
       </g>
     </g>
   </defs>
-  <rect x="-195", y="-405" width="390" height="400" rx="40" ry="40" fill="black" opacity="0.15"/>
-  <circle id="svg-road" cx="0" cy="0" r="410" stroke-width="80"/>
-  <g class="svg-label big">
-    <text x="0" y="-313">engine</text>
-    <text x="0" y="333">vehicle</text>
+  <g id="drawing">
+    <rect x="-195", y="-405" width="390" height="400" rx="40" ry="40" fill="black" opacity="0.15"/>
+    <circle id="svg-road" cx="0" cy="0" r="410" stroke-width="80"/>
+    <text class="svg-label big" x="0" y="-313">engine</text>
+    <text class="svg-label big" x="0" y="333">vehicle</text>
+    <use id="car" xlink:href="#svg-car"/>
   </g>
-  <use id="car" xlink:href="#svg-car"/>
 </svg>
 
 <script>
@@ -342,7 +342,7 @@ body {
 
   const sliders = [engine_power, torque, rpm, vehicle_power, acceleration, velocity, drag_power, drag_force];
 
-  const lever = new Lever(torque);
+  const lever = new Lever(engine_power);
 
   let old_brake, old_direction;
   let brake = false;

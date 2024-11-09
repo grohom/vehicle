@@ -4,172 +4,246 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Vehicle motion</title>
-  <style>
+<style>
 
-    body {
-      background-color: #e8e8e8;
-    }
-    
-    svg {
-      -webkit-user-select: none; /* Safari */
-      -ms-user-select: none; /* IE 10 and IE 11 */
-      user-select: none; /* Standard syntax */
-    }
+:root {
+  --bgnd-color: #273544;
+  --road-color: #262626;
+  --car-color: oklch(80% 0.4 260deg);
+  --tail-light-color: #900;
+  --brake-color: red;
+  --light-color:#ffffb3;
+  --inactive-label-color: oklch(from var(--car-color) calc(0.7*l) 0 0);
+}
 
-    svg text {
-      font-family: sans-serif;
-      font-size: 10pt;
-    }
-
-    .actual,
-    .desired {
-      fill: blue;
-    }
-
-    .desired {
-      opacity: 0.2;
-    }
-
-    .slider-frame {
-      fill: #aaa;
-      stroke: #999;
-      stroke-width: 4;
-    }
-
-    .slider-selected {
-      stroke: #08f;
-    }
-
-    .brake {
-      fill: red;
-    }
-    
-    .reverse {
-      fill: white;
-    }
-
-    .forward {
-      fill: #d8d8d8;
-    }
-
-  </style>
-</head>
-<body>
-
-<svg
-   width="1000"
-   height="600"
-   viewBox="0 0 1000 610"
-   version="1.1"
+body {
+  background-color:var(--bgnd-color);
+}
   
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-   <g id="drawing" transform="translate(50,0)">
-   <rect
-     style="stroke:#a0a0a0;stroke-width:2;stroke-linejoin:round;stroke-opacity:1"
-     class="forward"
-     width="120"
-     height="250"
-     x="35"
-     y="60"
-     rx="4"
-     ry="4" />
-   <line x1="35" y1="178" x2="155" y2="178" stroke="grey" />
-   <text
-     x="75"
-     y="50">
-     engine
-   </text>
-   <text
-     x="51"
-     y="303">
-     power
-   </text>
-   <text
-     x="101"
-     y="303">
-     torque
-   </text>
-   <rect
-    style="stroke:#a0a0a0;stroke-width:2;stroke-linejoin:round;stroke-opacity:1"
-    class="forward"
-    width="170"
-    height="250"
-    x="35"
-    y="350"
-    rx="4"
-    ry="4" />
-    <line x1="35" y1="468" x2="205" y2="468" stroke="grey" />
-    <text
-     x="101"
-     y="341">
-     vehicle
-   </text>
-   <text
-     x="51"
-     y="593">
-     power
-   </text>
-   <text
-     x="108"
-     y="593">
-     acc.
-   </text>
-   <text
-     x="147"
-     y="593">
-     velocity
-   </text>
+svg {
+  display:block;
+  margin:0 auto;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
 
-   <circle cx="600" cy="325" r="250" fill="none" stroke="rgb(210, 210, 210)" stroke-width="50" />
-   <rect id="car" x="570" y="61" width="60" height="30" rx="20" ry="10" fill="rgb(140, 140, 140)"/>
-   </g>
+#svg-road {
+  /* fill:oklch(from var(--road-color) l c h / 0.2); */
+  fill:none;
+  stroke:var(--road-color);
+}
+
+.svg-label {
+  font-family:sans-serif;
+  font-size:20px;
+  text-anchor:middle;
+  fill:var(--inactive-label-color);
+}
+
+.big {
+  font-size:28px;
+  font-weight:bold;
+}
+
+.active,
+#svg-car-base {
+  fill:oklch(from var(--car-color) calc(0.7*l) calc(0.4*c) h);
+}
+
+.svg-car-brake-light {
+  fill:var(--tail-light-color);
+}
+
+.svg-car-reverse-light {
+  fill: none;
+}
+
+#svg-car-headlights {
+  fill:var(--light-color);
+}
+
+.svg-slider-bgnd {
+  fill: oklch(from var(--light-color) calc(0.9*l) c h);
+  opacity:.6;
+}
+
+.reverse {
+  fill:white;
+}
+
+#svg-slider-zero {
+  stroke:var(--bgnd-color);
+}
+
+.svg-knob {
+  fill:var(--tail-light-color);
+  opacity:0.8;
+}
+
+.brake{
+  fill:var(--brake-color);
+}
+
+.svg-desired-knob {
+  stroke:var(--car-color);
+  stroke-width:8;
+  fill:#00000000;
+  opacity:0.6;
+}
+
+</style>
+</head>
+
+<body>
+<svg width="900" height="900" viewBox="-450 -450 900 900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <g id="svg-slider">
+      <rect id="svg-slider-bgnd-template" class="svg-slider-bgnd" x="-14" y="-14" width="28" height="228" rx="14" ry="14"/>
+      <path id="svg-slider-zero" d="m-14 100h28z"/>
+    </g>
+    <circle id="svg-knob-template" class="svg-knob" r="14"/>
+    <circle id="svg-desired-knob-template" class="svg-desired-knob" r="18"/>
+    <clipPath id="svg-car-shape">
+      <rect x="-25.75209" y="-50" width="51.514801" height="100" rx="20" ry="30"/>
+    </clipPath>
+    <radialGradient id="svg-headlight-gradient" cx="1353" cy="496.66" r="38.125" gradientTransform="matrix(0.84787,1.2755,0.81983,-3.0526,-1571.73,-233.99)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffb3" stop-opacity="0.5" offset="0"/>
+      <stop stop-color="#ffffb3" stop-opacity="0" offset="1"/>
+    </radialGradient>
+    <g id="svg-car" transform="translate(390,0)">
+      <path id="svg-left-headlight-cone" d="m-17.4-24.28 38.302-140.03h-64.851z" fill="url(#svg-headlight-gradient)"/>
+      <use id="svg-right-headlight-cone" transform="scale(-1 1)" xlink:href="#svg-left-headlight-cone"/>
+      <g id="svg-car-body" clip-path="url(#svg-car-shape)">
+        <rect id="svg-car-base" x="-25.75209" y="-50" width="51.514801" height="100"/>
+        <g id="svg-car-brake-light-template" class="svg-car-brake-light">
+          <rect x="-25.75209" y="44" width="18.00013" height="6"/>
+          <rect x="7.7325301" y="44" width="18.00013" height="6"/>
+        </g>
+        <rect id="svg-car-reverse-light-template" class="svg-car-reverse-light" x="-7.72191" y="44" width="15.514541" height="6"/>
+        <g id="svg-car-headlights">
+          <ellipse transform="matrix(0.82971315,-0.55819001,0.55819442,0.82971019,0,0)" cx="12" cy="-48.847805" rx="7.8462324" ry="4.7774267"/>
+          <ellipse transform="matrix(-0.82971315,-0.55819001,-0.55819442,0.82971019,0,0)" cx="12" cy="-48.847805" rx="7.8462324" ry="4.7774267"/>
+        </g>
+        <rect id="svg-car-top" x="-23" y="-20" width="46" height="55" rx="20" ry="10" fill="black" opacity="0.2"/>
+      </g>
+    </g>
+  </defs>
+  <g id="drawing">
+    <rect x="-181", y="-280" width="100" height="560" rx="50" ry="50" fill="#ffcccc" opacity="0.06"/>
+    <rect x="-50", y="-280" width="100" height="560" rx="50" ry="50" fill="var(--car-color)" opacity="0.05"/>
+    <rect x="81", y="-280" width="100" height="560" rx="50" ry="50" fill="var(--road-color)" opacity="0.35"/>
+    <circle id="svg-road" cx="0" cy="0" r="390" stroke-width="80"/>
+    <text class="svg-label big" x="0" y="-300">power</text>
+    <text class="svg-label big" x="0" y="320">force</text>
+    <!-- <text class="svg-label big active" x="-249" y="140">velocity</text> -->
+    <text class="svg-label big active" x="-283" y="0" transform="rotate(-90, -283, 0)">velocity</text>
+    <text class="svg-label active" x="-131" y="5">engine</text>
+    <text class="svg-label active" x="0" y="5">vehicle</text>
+    <text class="svg-label" x="131" y="5">road</text>
+    <use id="car" xlink:href="#svg-car"/>
+  </g>
 </svg>
 
-
-
 <script>
-  
+
   const drawing = document.getElementById("drawing");
+  const knob_template = document.getElementById("svg-knob-template");
+  const slider_bgnd_template = document.getElementById("svg-slider-bgnd-template");
+  const car = document.getElementById("car");
+  const car_brake_light_template = document.getElementById("svg-car-brake-light-template");
+  const car_reverse_light_template = document.getElementById("svg-car-reverse-light-template");
 
   const clamp = (x, xmin, xmax) => x < xmin ? xmin : x > xmax ? xmax : x;
   const clamp_abs = (x, xlim) => x < -xlim ? -xlim : x > xlim ? xlim : x;
 
-  class Indicator {
-    constructor(slider, klass="actual") {
-      let knob = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      knob.classList.add(klass);
-      knob.setAttribute("r", slider.r);
+  const mass = 1;
+  const k_drag = 1;
+  const Fmax = 1;
+  const vmax = Fmax/k_drag;
+  const Pmax = Fmax*vmax;
+  const amax = Fmax/mass;
+  const dt = 0.05;
+ 
+  class Slider {
+    height = slider_bgnd_template.height.baseVal.value - 2*slider_bgnd_template.rx.baseVal.value;
+    bottom = slider_bgnd_template.height.baseVal.value - slider_bgnd_template.rx.baseVal.value;
+
+    constructor(x0, y0, value, lim_val, update_function=null) {
+      this.x0 = x0;
+      this.y0 = y0;
+      this.min_val -lim_val;
+      this.max_val = lim_val;
+      this.scale = 0.5*this.height/lim_val;
+      this.value = value;
+
+      let frame = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      frame.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-slider");
+      frame.setAttribute("x", x0);
+      frame.setAttribute("y", y0);
+      drawing.appendChild(frame);
+
+      let knob = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      knob.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-knob-template");
+      knob.setAttribute("x", x0);
       drawing.appendChild(knob);
+
       this.knob = knob;
-      this.positionToSlider(slider);
+      this.update_position();
+
+      if (update_function) {
+        this.update_function = update_function;
+        this.desired = value;
+        let selectSlider = (evt) => {
+          if (lever.slider != this) {
+            lever.activateForSlider(this);
+          }
+        };
+        frame.addEventListener("mousedown", selectSlider);
+      }
+
     }
 
-    positionToSlider(slider) {
-      this.knob.setAttribute("cx", slider.x0);
-      this.knob.setAttribute("cy", slider.val2y(slider.actual));
+    update_position() {
+      this.knob.setAttribute("y", this.value2y(this.value));
     }
 
+    value2y(value) {
+      return this.y0 + (this.max_val - value)*this.scale;
+    }
+
+    y2value(y) {
+      return this.max_val - (y - this.y0)/this.scale;
+    }
+
+    newY(y) {
+      y = clamp(y, this.y0, this.y0 + this.height);
+      this.desired = this.y2value(y);
+      return y;
+    }
+    
   }
 
-  class Lever extends Indicator {
+  class Lever {
     constructor(slider) {
-      super(slider, "desired");
-      slider.frame.classList.add("slider-selected");
-      this.slider = slider;
+      let knob = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      knob.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-desired-knob-template");
+      drawing.appendChild(knob);
+      this.knob = knob;
+      this.activateForSlider(slider)
 
       this.dy = 0;
 
       let knobMove = (evt) => {
         let y = this.slider.newY(evt.offsetY - this.dy);
-        this.knob.setAttribute("cy", y);
+        this.knob.setAttribute("y", y);
       };
       let knobRelease = (evt) => {
         drawing.removeEventListener("mousemove", knobMove);
         window.removeEventListener("mouseup", knobRelease);
       };
       let knobGrab = (evt) => {
-        this.dy = evt.offsetY - this.knob.cy.baseVal.value;
+        this.dy = evt.offsetY - this.knob.y.baseVal.value;
         drawing.addEventListener("mousemove", knobMove);
         window.addEventListener("mouseup", knobRelease);
       };
@@ -178,215 +252,135 @@
     }
 
     activateForSlider(slider) {
+      slider.desired = slider.value;
+      this.knob.setAttribute("x", slider.x0);
+      this.knob.setAttribute("y", slider.value2y(slider.desired));
       this.slider = slider;
-      this.positionToSlider(slider);
-    }
-  }
-
-  class Slider {
-    height = 200;
-    r = 10;
-    // border = 4;
-    half_width = 10 + 4/2;
-    constructor(x0, y0, val, minVal, maxVal, update_function=null) {
-      this.x0 = x0;
-      this.y0 = y0;
-      this.minVal = minVal;
-      this.maxVal = maxVal;
-      this.scale = this.height/(maxVal - minVal);
-      this.actual = val;
-      let group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      let frame = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      frame.classList.add("slider-frame");
-      frame.setAttribute("x", x0 - this.half_width);
-      frame.setAttribute("y", y0 - this.half_width);
-      frame.setAttribute("width", 2*this.half_width);
-      frame.setAttribute("height", this.height + 2*this.half_width);
-      frame.setAttribute("rx", this.half_width);
-      frame.setAttribute("ry", this.half_width);
-      group.appendChild(frame);
-      drawing.appendChild(group);
-      this.frame = frame;
-      this.indicator = new Indicator(this);
-      // group.appendChild(this.indicator.knob);
-      if (update_function) {
-        this.update_function = update_function;
-        this.desired = val;
-        let selectSlider = (evt) => {
-          if (lever.slider != this) {
-            lever.slider.frame.classList.remove("slider-selected");
-            lever.activateForSlider(this);
-            lever.slider.frame.classList.add("slider-selected");
-            lever.slider.desired = lever.slider.actual;
-          }
-        };
-        group.addEventListener("mousedown", selectSlider);
-      }
-    }
-
-    newY(y) {
-      y = clamp(y, this.y0, this.y0 + this.height);
-      this.desired = this.y2val(y);
-      return y;
-    }
-
-    update() {
-      this.indicator.knob.setAttribute("cy", this.val2y(this.actual));
-    }
-
-    val2y(val) {
-      return this.y0 + (this.maxVal - val)*this.scale;
-    }
-
-    y2val(y) {
-      return this.maxVal - (y - this.y0)/this.scale;
     }
 
   }
 
-  const mass = 1;
-  const k_drag = 1;
-  const Fmax = 1;
-  const vmax = Fmax/k_drag;
-  const amax = Fmax/mass;
-  const Pmax = Fmax*vmax;
-  const dt = 0.05;
-
-  let force = 0;
-  let drag = 0;
-  let engine_power = 0;
-  let torque = 0;
-  let drag_power = 0;
-  let e_kinetic = 0;
-  let e_kinetic_dot = 0;
-  let x = 0;
-  let brake = false;
-  let direction = 0;
-
-  // engine
-  const displayed_engine_power = new Slider(70, 78, 0, -Pmax, Pmax, displayed_engine_power_pedal);
-  const displayed_torque = new Slider(120, 78, 0, -Fmax, Fmax, displayed_torque_pedal);
-  // vehicle
-  const displayed_vehicle_power = new Slider(70, 368, 0, -Pmax, Pmax, displayed_vehicle_power_pedal);
-  const acceleration = new Slider(120, 368, 0, -amax, amax, acceleration_pedal);
-  const velocity = new Slider(170, 368, 0, -vmax, vmax, velocity_pedal);
-
-  const sliders = [displayed_engine_power, displayed_torque, displayed_vehicle_power, acceleration, velocity];
-
-  const lever = new Lever(displayed_torque);
-
-  function displayed_torque_pedal() {
-    direction = (velocity.actual == 0) ? Math.sign(displayed_torque.desired) : direction;
-    displayed_torque.actual = displayed_torque.desired;
-    torque = direction*displayed_torque.actual;
-    force = displayed_torque.actual + drag;
-    acceleration.actual = force/mass;
-    velocity.actual += acceleration.actual*dt;
-    // direction = Math.sign(velocity.actual);
-    drag = -k_drag*velocity.actual;
-    drag_power = drag*velocity.actual;
-    displayed_vehicle_power.actual = force*velocity.actual;
-    engine_power = displayed_vehicle_power.actual - drag_power;
-    displayed_engine_power.actual = direction*engine_power;
-    e_kinetic = mass*velocity.actual*velocity.actual/2;
-    e_kinetic_dot = displayed_vehicle_power.actual;
-    x += velocity.actual*dt;
+  function torque_pedal() {
+    torque.value = clamp_abs(torque.desired, Fmax);
+    let force = torque.value + drag_force.value;
+    acceleration.value = force/mass;
+    velocity.value += acceleration.value*dt;
+    drag_force.value = -k_drag*velocity.value;
+    drag_power.value = direction*drag_force.value*velocity.value;
+    vehicle_power.value = direction*force*velocity.value;
+    engine_power.value = vehicle_power.value - drag_power.value;
+    x += velocity.value*dt;
   }
 
-  function displayed_engine_power_pedal() {
-    let desired_direction = (velocity.actual == 0) ? Math.sign(displayed_engine_power.desired) : direction;
-    let desired_displayed_power = displayed_engine_power.desired;
-    let desired_engine_power = desired_direction*desired_displayed_power;
-    let desired_e_kinetic = e_kinetic;
-    let desired_e_kinetic_dot = desired_engine_power - 2*k_drag/mass*desired_e_kinetic;
-    if (desired_e_kinetic_dot == 0) {
-      desired_displayed_torque = displayed_torque.actual;
-    } else {
-      let t0 = -desired_e_kinetic/desired_e_kinetic_dot;
+  function engine_power_pedal() {
+    let desired_direction = (velocity.value == 0) ? Math.sign(engine_power.desired) : direction;
+    let e_kinetic = mass*velocity.value*velocity.value/2;
+    let vehicle_power = desired_direction*engine_power.desired - 2*k_drag/mass*e_kinetic;
+    if (vehicle_power != 0) {
+      let t0 = -e_kinetic/vehicle_power;
       if ((0 < t0) && (t0 < dt)) {
-        desired_e_kinetic = 0;
+        e_kinetic = 0;
       } else {
-        desired_e_kinetic += desired_e_kinetic_dot*dt;
+        e_kinetic += vehicle_power*dt;
       }
-      let desired_velocity = desired_direction*Math.sqrt(2/mass*desired_e_kinetic);
-      let desired_drag = -k_drag*desired_velocity;
-      let desired_force = (desired_velocity != 0) ? desired_e_kinetic_dot/desired_velocity : displayed_torque.actual;
-      desired_displayed_torque = desired_force - desired_drag;
-      desired_displayed_torque = clamp_abs(desired_displayed_torque, Fmax);
+      let desired_velocity = desired_direction*Math.sqrt(2/mass*e_kinetic);
+      let drag_force = -k_drag*desired_velocity;
+      let vehicle_force = (desired_velocity != 0) ? vehicle_power/desired_velocity : torque.value;
+      let desired_torque = vehicle_force - drag_force;
+      torque.desired = desired_torque;
     }
-    displayed_torque.desired = desired_displayed_torque;
-    displayed_torque_pedal();
+    torque_pedal();
   }
 
-  function displayed_vehicle_power_pedal() {
-    let desired_direction = (velocity.actual == 0) ? Math.sign(displayed_vehicle_power.desired) : direction;
-    let desired_vehicle_power = desired_direction*displayed_vehicle_power.desired;
-    let desired_engine_power = desired_vehicle_power + k_drag*velocity.actual*velocity.actual;
-    let desired_displayed_power = desired_direction*desired_engine_power;
-    desired_displayed_power = clamp_abs(desired_displayed_power, Pmax);
-    displayed_engine_power.desired = desired_displayed_power;
-    displayed_engine_power_pedal();
+  function vehicle_power_pedal() {
+    let desired_direction = (velocity.value == 0) ? Math.sign(vehicle_power.desired) : direction;
+    let desired_vehicle_power = desired_direction*vehicle_power.desired;
+    let desired_engine_power = desired_vehicle_power + k_drag*velocity.value*velocity.value;
+    desired_engine_power = desired_direction*desired_engine_power;
+    engine_power.desired = desired_engine_power;
+    engine_power_pedal();
   }
 
   function acceleration_pedal() {
-    let desired_direction = (velocity.actual == 0) ? Math.sign(acceleration.desired) : direction;
-    let desired_acceleration = acceleration.desired;
-    let desired_vehicle_power = desired_direction*mass*desired_acceleration*velocity.actual;
-    desired_vehicle_power = clamp_abs(desired_vehicle_power, Pmax);
-    displayed_vehicle_power.desired = desired_vehicle_power;
-    displayed_vehicle_power_pedal();
+    if (velocity.value == 0) {
+      // torque.desired = acceleration.desired*mass;
+      torque.desired = Fmax*Math.sign(acceleration.desired);
+      torque_pedal();
+    }
+    else {
+      let desired_vehicle_power = direction*mass*acceleration.desired*velocity.value;
+      vehicle_power.desired = desired_vehicle_power;
+      vehicle_power_pedal();
+    }
   }
 
   function velocity_pedal() {
-    let desired_acceleration = (velocity.desired - velocity.actual)/dt;
-    desired_acceleration = clamp_abs(desired_acceleration, amax);
-    acceleration.desired += 0.9*(desired_acceleration - acceleration.desired);
+    let desired_velocity = ((velocity.value == 0) || (Math.sign(velocity.desired) == Math.sign(velocity.value))) ? velocity.desired : 0;
+    let desired_acceleration = (desired_velocity - velocity.value)/dt;
+    acceleration.desired = clamp_abs(desired_acceleration, amax);
     acceleration_pedal();
   }
 
-  let old_brake = false;
-  let old_direction = 0;
-  const boxes = [...document.getElementsByClassName("forward")];
-  const car = document.getElementById("car");
+  // velocity
+  const velocity = new Slider(-235, -100, 0, vmax, velocity_pedal);
+  // power
+  const engine_power = new Slider(-131, -235, 0, Pmax, engine_power_pedal);
+  const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal);
+  const drag_power = new Slider(131, -235, 0, Pmax);
+  // force
+  const torque = new Slider(-131, 35, 0, Fmax, torque_pedal);
+  const acceleration = new Slider(0, 35, 0, Fmax, acceleration_pedal);
+  const drag_force = new Slider(131, 35, 0, Fmax);
 
+  const sliders = [engine_power, torque, vehicle_power, acceleration, velocity, drag_power, drag_force];
+
+  const lever = new Lever(engine_power);
+
+  let old_brake, old_direction;
+  let brake = false;
+  let direction = 0;
+
+  let x = 0;
   function simulate() {
     lever.slider.update_function();
-    brake = engine_power < 0;
-    direction = Math.sign(velocity.actual);
+    direction = Math.sign(velocity.value);
+    brake = direction*engine_power.value < 0;
     if (old_brake != brake) {
       if (brake) {
-        sliders.forEach(slider => {slider.indicator.knob.classList.add("brake");});
-        lever.knob.classList.add("brake");
+        knob_template.classList.add("brake");
+        car_brake_light_template.classList.add("brake");
       } else {
-        sliders.forEach(slider => {slider.indicator.knob.classList.remove("brake");});
-        lever.knob.classList.remove("brake");
+        knob_template.classList.remove("brake");
+        car_brake_light_template.classList.remove("brake");
       }
     }
     if (old_direction != direction) {
       if (direction == -1) {
-        boxes.forEach(box => {box.classList.remove("forward");box.classList.add("reverse");});
+        slider_bgnd_template.classList.add("reverse");
+        car_reverse_light_template.classList.add("reverse");
       } else if (direction == 1) {
-        boxes.forEach(box => {box.classList.remove("reverse");box.classList.add("forward");});
+        slider_bgnd_template.classList.remove("reverse");
+        car_reverse_light_template.classList.remove("reverse");
       } else {
+        slider_bgnd_template.classList.remove("reverse");
+        car_reverse_light_template.classList.remove("reverse");
       }
     }
     old_brake = brake;
     old_direction = direction;
-    sliders.forEach(slider => {slider.update();});
-    car.setAttribute("transform", "rotate(" + (90 - x*50) + " 600 325)");
+    sliders.forEach(slider => {slider.update_position();});
+    car.setAttribute("transform", `rotate(${-x*50})`);
   }
-
-  document.addEventListener("keydown", (evt) => {
-    if ((evt.key == "ArrowUp") || (evt.key == "ArrowDown")) {
-      let y = lever.slider.newY(lever.knob.cy.baseVal.value + (evt.key == "ArrowUp" ? -10 : 10));
-      lever.knob.setAttribute("cy", y);
-    }
-  });
-
 
   setInterval(simulate, 100);
 
-</script>
+  document.addEventListener("keydown", (evt) => {
+    if ((evt.key == "ArrowUp") || (evt.key == "ArrowDown")) {
+      let y = lever.slider.newY(lever.knob.y.baseVal.value + (evt.key == "ArrowUp" ? -10 : 10));
+      lever.knob.setAttribute("y", y);
+    }
+  });
 
+</script>
 </body>
 </html>
