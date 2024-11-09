@@ -20,7 +20,7 @@ body {
   background-color:var(--bgnd-color);
 }
   
-svg {
+#drawing {
   display:block;
   margin:0 auto;
   -webkit-user-select: none; /* Safari */
@@ -95,7 +95,7 @@ svg {
 </head>
 
 <body>
-<svg id="drawing" width="900" height="900" viewBox="-450 -450 900 900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg id="drawing" width="920" height="920" viewBox="-460 -460 920 920" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
     <g id="svg-slider">
       <rect id="svg-slider-bgnd-template" class="svg-slider-bgnd" x="-14" y="-14" width="28" height="228" rx="14" ry="14"/>
@@ -158,15 +158,17 @@ svg {
  
   class Slider {
     height = slider_bgnd_template.height.baseVal.value - 2*slider_bgnd_template.rx.baseVal.value;
-    radius = slider_bgnd_template.rx.baseVal.value;
-    constructor(label, x0, y0, value, lim_val, active=false) {
+    bottom = slider_bgnd_template.height.baseVal.value - slider_bgnd_template.rx.baseVal.value;
+
+    constructor(label, x0, y0, value, lim_val, update_function=null) {
       this.x0 = x0;
       this.y0 = y0;
-      this.lim_val = lim_val;
-      this.forward();
+      this.min_val -lim_val;
+      this.max_val = lim_val;
+      this.scale = 0.5*this.height/lim_val;
       this.value = value;
 
-      let ypos = y0 + this.height + this.radius;
+      let ypos = y0 + this.bottom;
       let multirow_label = document.createElementNS("http://www.w3.org/2000/svg", "g");
       label.split("\n").forEach(row => {
         ypos += 24;
@@ -175,7 +177,7 @@ svg {
         text.setAttribute("y", ypos);
         text.textContent = row;
         text.classList.add("svg-label");
-        if (active) text.classList.add("active");
+        if (update_function) text.classList.add("active");
         multirow_label.appendChild(text);
       });
       drawing.appendChild(multirow_label);
@@ -194,8 +196,8 @@ svg {
       this.knob = knob;
       this.update_position();
 
-      if (active) {
-        // this.update_function = update_function;
+      if (update_function) {
+        this.update_function = update_function;
         this.desired = value;
         let selectSlider = (evt) => {
           if (lever.slider != this) {
@@ -224,15 +226,7 @@ svg {
       this.desired = this.y2value(y);
       return y;
     }
-
-    forward() {
-      [this.min_val, this.max_val, this.scale] = [-this.lim_val, this.lim_val, 0.5*this.height/this.lim_val];
-    }
     
-    reverse() {
-      [this.min_val, this.max_val, this.scale] = [this.lim_val, -this.lim_val, -0.5*this.height/this.lim_val];
-    }
-
   }
 
   class Lever {
@@ -272,45 +266,86 @@ svg {
   }
 
   function torque_pedal() {
-    torque.value = torque.desired;
+    torque.value = clamp_abs(torque.desired, Fmax);
     let force = torque.value + drag_force.value;
     acceleration.value = force/mass;
     velocity.value += acceleration.value*dt;
     rpm.value = velocity.value;
     drag_force.value = -k_drag*velocity.value;
-    drag_power.value = drag_force.value*velocity.value;
-    vehicle_power.value = force*velocity.value;
+    drag_power.value = direction*drag_force.value*velocity.value;
+    vehicle_power.value = direction*force*velocity.value;
     engine_power.value = vehicle_power.value - drag_power.value;
-    // e_kinetic = mass*velocity.value*velocity.value/2;
-    // e_kinetic_dot = vehicle_power.value;
     x += velocity.value*dt;
+  }
+
+  function engine_power_pedal() {
+    let desired_direction = (velocity.value == 0) ? Math.sign(engine_power.desired) : direction;
+    let e_kinetic = mass*velocity.value*velocity.value/2;
+    let vehicle_power = desired_direction*engine_power.desired - 2*k_drag/mass*e_kinetic;
+    if (vehicle_power != 0) {
+      let t0 = -e_kinetic/vehicle_power;
+      if ((0 < t0) && (t0 < dt)) {
+        e_kinetic = 0;
+      } else {
+        e_kinetic += vehicle_power*dt;
+      }
+      let desired_velocity = desired_direction*Math.sqrt(2/mass*e_kinetic);
+      let drag_force = -k_drag*desired_velocity;
+      let vehicle_force = (desired_velocity != 0) ? vehicle_power/desired_velocity : torque.value;
+      let desired_torque = vehicle_force - drag_force;
+      torque.desired = desired_torque;
+    }
+    torque_pedal();
+  }
+
+  function vehicle_power_pedal() {
+    let desired_direction = (velocity.value == 0) ? Math.sign(vehicle_power.desired) : direction;
+    let desired_vehicle_power = desired_direction*vehicle_power.desired;
+    let desired_engine_power = desired_vehicle_power + k_drag*velocity.value*velocity.value;
+    desired_engine_power = desired_direction*desired_engine_power;
+    engine_power.desired = desired_engine_power;
+    engine_power_pedal();
+  }
+
+  function acceleration_pedal() {
+    let desired_direction = (velocity.value == 0) ? Math.sign(acceleration.desired) : direction;
+    let desired_vehicle_power = desired_direction*mass*acceleration.desired*velocity.value;
+    vehicle_power.desired = desired_vehicle_power;
+    vehicle_power_pedal();
+  }
+
+  function velocity_pedal() {
+    let desired_acceleration = (velocity.desired - velocity.value)/dt;
+    acceleration.desired += 0.5*(desired_acceleration - acceleration.desired);
+    acceleration_pedal();
   }
 
 
   // engine
-  const engine_power = new Slider("power", -131, -263, 0, Pmax, true);
-  const torque = new Slider("torque", 0, -263, 0, Fmax, true);
-  const rpm = new Slider("RPM", 131, -263, 0, vmax, false);
+  const engine_power = new Slider("power", -131, -263, 0, Pmax, engine_power_pedal);
+  const torque = new Slider("torque", 0, -263, 0, Fmax, torque_pedal);
+  const rpm = new Slider("RPM", 131, -263, 0, vmax);
   // vehicle
-  const vehicle_power = new Slider("power", -131, 22, 0, Pmax, true);
-  const acceleration = new Slider("acceleration\n(force)", 0, 22, 0, Fmax, true);
-  const velocity = new Slider("velocity", 131, 22, 0, vmax, true);
+  const vehicle_power = new Slider("power", -131, 22, 0, Pmax, vehicle_power_pedal);
+  const acceleration = new Slider("acceleration\n(force)", 0, 22, 0, Fmax, acceleration_pedal);
+  const velocity = new Slider("velocity", 131, 22, 0, vmax, velocity_pedal);
   // drag
-  const drag_power = new Slider("drag\npower", -249, -129, 0, Pmax, false);
-  const drag_force = new Slider("drag\nforce", 249, -129, 0, Fmax, false);
+  const drag_power = new Slider("drag\npower", -249, -129, 0, Pmax);
+  const drag_force = new Slider("drag\nforce", 249, -129, 0, Fmax);
 
   const sliders = [engine_power, torque, rpm, vehicle_power, acceleration, velocity, drag_power, drag_force];
 
   const lever = new Lever(torque);
 
-  let old_brake = engine_power.value < 0;
-  let old_direction = Math.sign(velocity.value);
+  let old_brake, old_direction;
+  let brake = false;
+  let direction = 0;
 
   let x = 0;
   function simulate() {
-    torque_pedal(); // !!!!
-    brake = engine_power.value < 0;
+    lever.slider.update_function();
     direction = Math.sign(velocity.value);
+    brake = direction*engine_power.value < 0;
     if (old_brake != brake) {
       if (brake) {
         knob_template.classList.add("brake");
@@ -324,15 +359,12 @@ svg {
       if (direction == -1) {
         slider_bgnd_template.classList.add("reverse");
         car_reverse_light_template.classList.add("reverse");
-        [engine_power, drag_power, vehicle_power].forEach(slider => {slider.reverse();});
       } else if (direction == 1) {
         slider_bgnd_template.classList.remove("reverse");
         car_reverse_light_template.classList.remove("reverse");
-        [engine_power, drag_power, vehicle_power].forEach(slider => {slider.forward();});
       } else {
         slider_bgnd_template.classList.remove("reverse");
         car_reverse_light_template.classList.remove("reverse");
-        [engine_power, drag_power, vehicle_power].forEach(slider => {slider.forward();});
       }
     }
     old_brake = brake;
