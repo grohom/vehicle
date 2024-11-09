@@ -136,18 +136,19 @@ svg {
     <circle id="svg-road" cx="0" cy="0" r="390" stroke-width="80"/>
     <text class="svg-label big" x="0" y="-300">power</text>
     <text class="svg-label big" x="0" y="320">force</text>
-    <!-- <text class="svg-label big active" x="-249" y="140">velocity</text> -->
-    <text class="svg-label big active" x="-283" y="0" transform="rotate(-90, -283, 0)">velocity</text>
-    <text class="svg-label active" x="-131" y="5">engine</text>
-    <text class="svg-label active" x="0" y="5">vehicle</text>
+    <!-- <text class="svg-label big" x="-249" y="140">velocity</text> -->
+    <text class="svg-label big" x="-283" y="0" transform="rotate(-90, -283, 0)">velocity</text>
+    <text class="svg-label" x="-131" y="5">engine</text>
+    <text class="svg-label" x="0" y="5">vehicle</text>
     <text class="svg-label" x="131" y="5">road</text>
-    <text class="svg-label" x="260" y="80">force</text>
-    <text class="svg-label" x="260" y="100">vectors</text>
+    <!-- <text class="svg-label big" x="260" y="80">force</text>
+    <text class="svg-label big" x="260" y="108">vectors</text> -->
+    <text class="svg-label big" x="298" y="0" transform="rotate(90, 298, 0)">vectors</text>
     <use id="car" xlink:href="#svg-car"/>
-    <use xlink:href="#svg-car" transform="translate(-130, 0)" opacity="0.2"/>
-    <line id="svg-engine-vector" x1="255" y1="0" x2="255" y2="0" stroke="#aaa" stroke-width="3"/>
-    <line id="svg-vehicle-vector" x1="260" y1="0" x2="260" y2="0" stroke="var(--car-color)" stroke-width="3"/>
-    <line id="svg-drag-vector" x1="265" y1="0" x2="265" y2="0" stroke="#222" stroke-width="3"/>
+    <use xlink:href="#svg-car" transform="translate(-148, 0)" opacity="0.2"/>
+    <line id="svg-engine-vector" x1="238" y1="0" x2="238" y2="0" stroke="#aaa" stroke-width="3"/>
+    <line id="svg-vehicle-vector" x1="242" y1="0" x2="242" y2="0" stroke="var(--car-color)" stroke-width="3"/>
+    <line id="svg-drag-vector" x1="248" y1="0" x2="248" y2="0" stroke="#222" stroke-width="3"/>
   </g>
 </svg>
 
@@ -186,16 +187,20 @@ svg {
       this.scale = 0.5*this.height/lim_val;
       this.value = value;
 
-      let frame = document.createElementNS("http://www.w3.org/2000/svg", "use");
-      frame.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-slider");
-      frame.setAttribute("x", x0);
-      frame.setAttribute("y", y0);
-      drawing.appendChild(frame);
+      let frame = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+      let bgnd = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      bgnd.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-slider");
+      bgnd.setAttribute("x", x0);
+      bgnd.setAttribute("y", y0);
+      frame.appendChild(bgnd);
 
       let knob = document.createElementNS("http://www.w3.org/2000/svg", "use");
       knob.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-knob-template");
       knob.setAttribute("x", x0);
-      drawing.appendChild(knob);
+      frame.appendChild(knob);
+
+      drawing.appendChild(frame);
 
       this.knob = knob;
       this.update_position();
@@ -331,7 +336,7 @@ svg {
   }
 
   // velocity
-  const velocity = new Slider(-235, -100, 0, vmax, velocity_pedal);
+  const velocity = new Slider(-232, -100, 0, vmax, velocity_pedal);
   // power
   const engine_power = new Slider(-131, -235, 0, Pmax, engine_power_pedal);
   const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal);
