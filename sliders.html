@@ -130,7 +130,7 @@ svg {
     </g>
   </defs>
   <g id="drawing">
-    <rect x="-181", y="-280" width="100" height="560" rx="50" ry="50" fill="#ffcccc" opacity="0.06"/>
+    <rect x="-181", y="-280" width="100" height="560" rx="50" ry="50" fill="white" opacity="0.05"/>
     <rect x="-50", y="-280" width="100" height="560" rx="50" ry="50" fill="var(--car-color)" opacity="0.05"/>
     <rect x="81", y="-280" width="100" height="560" rx="50" ry="50" fill="var(--road-color)" opacity="0.35"/>
     <circle id="svg-road" cx="0" cy="0" r="390" stroke-width="80"/>
@@ -141,7 +141,13 @@ svg {
     <text class="svg-label active" x="-131" y="5">engine</text>
     <text class="svg-label active" x="0" y="5">vehicle</text>
     <text class="svg-label" x="131" y="5">road</text>
+    <text class="svg-label" x="260" y="80">force</text>
+    <text class="svg-label" x="260" y="100">vectors</text>
     <use id="car" xlink:href="#svg-car"/>
+    <use xlink:href="#svg-car" transform="translate(-130, 0)" opacity="0.2"/>
+    <line id="svg-engine-vector" x1="255" y1="0" x2="255" y2="0" stroke="#aaa" stroke-width="3"/>
+    <line id="svg-vehicle-vector" x1="260" y1="0" x2="260" y2="0" stroke="var(--car-color)" stroke-width="3"/>
+    <line id="svg-drag-vector" x1="265" y1="0" x2="265" y2="0" stroke="#222" stroke-width="3"/>
   </g>
 </svg>
 
@@ -153,6 +159,9 @@ svg {
   const car = document.getElementById("car");
   const car_brake_light_template = document.getElementById("svg-car-brake-light-template");
   const car_reverse_light_template = document.getElementById("svg-car-reverse-light-template");
+  const engine_vector = document.getElementById("svg-engine-vector");
+  const drag_vector = document.getElementById("svg-drag-vector");
+  const vehicle_vector = document.getElementById("svg-vehicle-vector");
 
   const clamp = (x, xmin, xmax) => x < xmin ? xmin : x > xmax ? xmax : x;
   const clamp_abs = (x, xlim) => x < -xlim ? -xlim : x > xlim ? xlim : x;
@@ -343,6 +352,9 @@ svg {
   let x = 0;
   function simulate() {
     lever.slider.update_function();
+    engine_vector.setAttribute("y2", -100*torque.value/Fmax);
+    vehicle_vector.setAttribute("y2", -100*mass*acceleration.value/Fmax);
+    drag_vector.setAttribute("y2", -100*drag_force.value/Fmax);
     direction = Math.sign(velocity.value);
     brake = direction*engine_power.value < 0;
     if (old_brake != brake) {
