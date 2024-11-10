@@ -341,11 +341,11 @@ svg {
   // power
   const engine_power = new Slider(-131, -235, 0, Pmax, engine_power_pedal);
   const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal);
-  const drag_power = new Slider(131, -235, 0, Pmax, null, "The drag power Pdrag = Fdrag*v (you cannot set this slider)");
+  const drag_power = new Slider(131, -235, 0, Pmax, null, "the drag power Pdrag = Fdrag*v\n(you cannot set this slider)");
   // force
-  const torque = new Slider(-131, 35, 0, Fmax, torque_pedal, "The engine force, proportional to the engine torque");
-  const acceleration = new Slider(0, 35, 0, Fmax, acceleration_pedal, "The net force acting on the vehicle, proportional to its acceleration");
-  const drag_force = new Slider(131, 35, 0, Fmax, null, "The drag force Fdrag = -kv (you cannot set this slider)");
+  const torque = new Slider(-131, 35, 0, Fmax, torque_pedal, "the engine force\n(the transmission ratio being constant,\nthis is also the torque slider)");
+  const acceleration = new Slider(0, 35, 0, Fmax, acceleration_pedal, "the net force acting on the vehicle\n(because F = ma and m = constant,\nthis is also the acceleration slider)");
+  const drag_force = new Slider(131, 35, 0, Fmax, null, "The drag force Fdrag = -kv\n(you cannot set this slider)");
 
   const sliders = [engine_power, torque, vehicle_power, acceleration, velocity, drag_power, drag_force];
 
