@@ -175,7 +175,7 @@ svg {
     height = slider_bgnd_template.height.baseVal.value - 2*slider_bgnd_template.rx.baseVal.value;
     bottom = slider_bgnd_template.height.baseVal.value - slider_bgnd_template.rx.baseVal.value;
 
-    constructor(x0, y0, value, lim_val, update_function=null) {
+    constructor(x0, y0, value, lim_val, update_function=null, tooltip=null) {
       this.x0 = x0;
       this.y0 = y0;
       this.min_val -lim_val;
@@ -189,6 +189,11 @@ svg {
       bgnd.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#svg-slider");
       bgnd.setAttribute("x", x0);
       bgnd.setAttribute("y", y0);
+      if (tooltip) {
+        let title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+        title.textContent = tooltip;
+        bgnd.appendChild(title);
+      }
       frame.appendChild(bgnd);
 
       let knob = document.createElementNS("http://www.w3.org/2000/svg", "use");
@@ -336,11 +341,11 @@ svg {
   // power
   const engine_power = new Slider(-131, -235, 0, Pmax, engine_power_pedal);
   const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal);
-  const drag_power = new Slider(131, -235, 0, Pmax);
+  const drag_power = new Slider(131, -235, 0, Pmax, null, "The drag power Pdrag = Fdrag*v (you cannot set this slider)");
   // force
-  const torque = new Slider(-131, 35, 0, Fmax, torque_pedal);
-  const acceleration = new Slider(0, 35, 0, Fmax, acceleration_pedal);
-  const drag_force = new Slider(131, 35, 0, Fmax);
+  const torque = new Slider(-131, 35, 0, Fmax, torque_pedal, "The engine force, proportional to the engine torque");
+  const acceleration = new Slider(0, 35, 0, Fmax, acceleration_pedal, "The net force acting on the vehicle, proportional to its acceleration");
+  const drag_force = new Slider(131, 35, 0, Fmax, null, "The drag force Fdrag = -kv (you cannot set this slider)");
 
   const sliders = [engine_power, torque, vehicle_power, acceleration, velocity, drag_power, drag_force];
 
