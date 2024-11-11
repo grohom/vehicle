@@ -320,8 +320,8 @@ when the vehicle is moving backwards</title>power</text>
 
   function acceleration_pedal() {
     if (velocity.value == 0) {
-      // torque.desired = acceleration.desired*mass;
-      torque.desired = Fmax*Math.sign(acceleration.desired);
+      torque.desired = acceleration.desired*mass;
+      // torque.desired = Fmax*Math.sign(acceleration.desired);
       torque_pedal();
     }
     else {
@@ -345,7 +345,7 @@ when the vehicle is moving backwards</title>power</text>
   const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal);
   const drag_power = new Slider(131, -235, 0, Pmax, null, "the drag power: Pdrag = Fdrag*v\n(you cannot set this slider)");
   // force
-  const torque = new Slider(-131, 35, 0, Fmax, torque_pedal, "the engine force\n(the transmission ratio being constant,\nthis is also the \"torque\" slider)");
+  const torque = new Slider(-131, 35, 0, Fmax, torque_pedal, "the engine force\n(because transmission ratio = constant,\nthis is also the \"torque\" slider)");
   const acceleration = new Slider(0, 35, 0, Fmax, acceleration_pedal, "the net force acting on the vehicle\n(because F = ma and m = constant,\nthis is also the \"acceleration\" slider)");
   const drag_force = new Slider(131, 35, 0, Fmax, null, "the drag force: Fdrag = -kv\n(you cannot set this slider)");
 
