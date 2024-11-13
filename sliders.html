@@ -141,9 +141,10 @@ when the vehicle is moving backwards</title>power</text>
     <text class="svg-label big" x="298" y="0" fill="var(--inactive-label-color)" transform="rotate(90, 298, 0)">vectors</text>
     <text class="svg-label" x="-131" y="5" fill="#ccc">engine</text>
     <text class="svg-label" x="0" y="5" fill="var(--car-color)">vehicle</text>
-    <text class="svg-label" x="131" y="5" fill="black">road</text>
+    <text class="svg-label" x="131" y="5" fill="black">drag</text>
     <use id="car" xlink:href="#svg-car"/>
-    <use xlink:href="#svg-car" transform="translate(-148, 0)" opacity="0.2"/>
+    <use xlink:href="#svg-car" transform="translate(-148, 0)" opacity="0.2"><title>the force vectors:
+engine, vehicle, drag</title></use>
     <line id="svg-engine-vector" x1="238" y1="0" x2="238" y2="0" stroke="#ccc" stroke-width="3"/>
     <line id="svg-vehicle-vector" x1="242" y1="0" x2="242" y2="0" stroke="var(--car-color)" stroke-width="3"/>
     <line id="svg-drag-vector" x1="248" y1="0" x2="248" y2="0" stroke="black" stroke-width="3"/>
@@ -341,8 +342,8 @@ when the vehicle is moving backwards</title>power</text>
   // velocity
   const velocity = new Slider(-232, -100, 0, vmax, velocity_pedal);
   // power
-  const engine_power = new Slider(-131, -235, 0, Pmax, engine_power_pedal);
-  const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal);
+  const engine_power = new Slider(-131, -235, 0, Pmax, engine_power_pedal, "the engine power: Pengine = Fengine*v");
+  const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal, "the vehicle power: Pvehicle = Fvehicle*v = m*a*v");
   const drag_power = new Slider(131, -235, 0, Pmax, null, "the drag power: Pdrag = Fdrag*v\n(you cannot set this slider)");
   // force
   const torque = new Slider(-131, 35, 0, Fmax, torque_pedal, "the engine force\n(transmission ratio = constant,\nso this is also the \"torque\" slider)");
