@@ -138,16 +138,19 @@ all three power sliders flip upside down
 when the vehicle is moving backwards</title>power</text>
     <text class="svg-label big" x="0" y="320" fill="var(--inactive-label-color)">force</text>
     <text class="svg-label big" x="-283" y="0" fill="var(--inactive-label-color)" transform="rotate(-90, -283, 0)">velocity</text>
-    <text class="svg-label big" x="298" y="0" fill="var(--inactive-label-color)" transform="rotate(90, 298, 0)">vectors</text>
     <text class="svg-label" x="-131" y="5" fill="#ccc">engine</text>
     <text class="svg-label" x="0" y="5" fill="var(--car-color)">vehicle</text>
     <text class="svg-label" x="131" y="5" fill="black">drag</text>
     <use id="car" xlink:href="#svg-car"/>
-    <use xlink:href="#svg-car" transform="translate(-148, 0)" opacity="0.2"><title>the force vectors:
-engine, vehicle, drag</title></use>
-    <line id="svg-engine-vector" x1="238" y1="0" x2="238" y2="0" stroke="#ccc" stroke-width="3"/>
-    <line id="svg-vehicle-vector" x1="242" y1="0" x2="242" y2="0" stroke="var(--car-color)" stroke-width="3"/>
-    <line id="svg-drag-vector" x1="248" y1="0" x2="248" y2="0" stroke="black" stroke-width="3"/>
+    <g>
+      <title>the force vectors:
+engine, vehicle, drag</title>
+      <text class="svg-label big" x="298" y="0" fill="var(--inactive-label-color)" transform="rotate(90, 298, 0)">vectors</text>
+      <use xlink:href="#svg-car" transform="translate(-148, 0)" opacity="0.2"/>
+      <line id="svg-engine-vector" x1="238" y1="0" x2="238" y2="0" stroke="#ccc" stroke-width="3"/>
+      <line id="svg-vehicle-vector" x1="242" y1="0" x2="242" y2="0" stroke="var(--car-color)" stroke-width="3"/>
+      <line id="svg-drag-vector" x1="248" y1="0" x2="248" y2="0" stroke="black" stroke-width="3"/>
+    </g>
   </g>
 </svg>
 
