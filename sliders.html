@@ -346,7 +346,7 @@ engine, vehicle, drag</title>
   const velocity = new Slider(-232, -100, 0, vmax, velocity_pedal);
   // power
   const engine_power = new Slider(-131, -235, 0, Pmax, engine_power_pedal, "the engine power: Pengine = Fengine*v");
-  const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal, "the vehicle power: Pvehicle = Fvehicle*v = m*a*v");
+  const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal, "the vehicle power: P = F*v = m*a*v");
   const drag_power = new Slider(131, -235, 0, Pmax, null, "the drag power: Pdrag = Fdrag*v\n(you cannot set this slider)");
   // force
   const torque = new Slider(-131, 35, 0, Fmax, torque_pedal, "the engine force\n(transmission ratio = constant,\nso this is also the \"torque\" slider)");
