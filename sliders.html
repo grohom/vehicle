@@ -338,6 +338,7 @@ engine, vehicle, drag</title>
   function acceleration_pedal() {
 	  let desired_torque = mass*acceleration.desired + k_drag*velocity.value;
 	  desired_torque = clamp_abs(desired_torque, Fmax);
+	  torque.desired = desired_torque;
 	  torque_pedal();
   }
 
