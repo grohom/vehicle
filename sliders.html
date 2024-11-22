@@ -322,24 +322,11 @@ engine, vehicle, drag</title>
     engine_power_pedal();
   }
 
-  function acceleration_pedal_old() {
-    if (velocity.value == 0) {
-      torque.desired = acceleration.desired*mass;
-      // torque.desired = Fmax*Math.sign(acceleration.desired);
-      torque_pedal();
-    }
-    else {
-      let desired_vehicle_power = direction*mass*acceleration.desired*velocity.value;
-      vehicle_power.desired = desired_vehicle_power;
-      vehicle_power_pedal();
-    }
-  }
-
   function acceleration_pedal() {
-	  let desired_torque = mass*acceleration.desired + k_drag*velocity.value;
-	  desired_torque = clamp_abs(desired_torque, Fmax);
-	  torque.desired = desired_torque;
-	  torque_pedal();
+    let desired_torque = mass*acceleration.desired + k_drag*velocity.value;
+    desired_torque = clamp_abs(desired_torque, Fmax);
+    torque.desired = desired_torque;
+    torque_pedal();
   }
 
   function velocity_pedal() {
