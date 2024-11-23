@@ -339,13 +339,13 @@ engine, vehicle, drag</title>
   // velocity
   const velocity = new Slider(-232, -100, 0, vmax, velocity_pedal);
   // power
-  const engine_power = new Slider(-131, -235, 0, Pmax, engine_power_pedal, "the engine power: Pengine = Fengine*v");
-  const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal, "the vehicle power: P = F*v = m*a*v");
-  const drag_power = new Slider(131, -235, 0, Pmax, null, "the drag power: Pdrag = Fdrag*v\n(you cannot set this slider)");
+  const engine_power = new Slider(-131, -235, 0, Pmax, engine_power_pedal, "the engine power\nPengine = Fengine*v");
+  const vehicle_power = new Slider(0, -235, 0, Pmax, vehicle_power_pedal, "the power used to accelerate the vehicle\nP = F*v = m*a*v");
+  const drag_power = new Slider(131, -235, 0, Pmax, null, "the drag power\nPdrag = Fdrag*v\n(you cannot set this slider)");
   // force
   const torque = new Slider(-131, 35, 0, Fmax, torque_pedal, "the engine force Fengine\n(transmission ratio = const.,\nso this is also the \"torque\" slider)");
   const acceleration = new Slider(0, 35, 0, Fmax, acceleration_pedal, "the net force F acting on the vehicle\n(m = const. and F = m*a,\nso this is also the \"acceleration\" slider)");
-  const drag_force = new Slider(131, 35, 0, Fmax, null, "the drag force: Fdrag = -k*v\n(you cannot set this slider)");
+  const drag_force = new Slider(131, 35, 0, Fmax, null, "the drag force\nFdrag = -k*v\n(you cannot set this slider)");
 
   const sliders = [engine_power, torque, vehicle_power, acceleration, velocity, drag_power, drag_force];
 
